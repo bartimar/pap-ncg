@@ -40,27 +40,24 @@ void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 		}
 	}
 
-	printf("    ");
-	for(i=0; i < NUMBERofVERTICES; i++){
-		printf("%4c", 'A' + i);
-	}
-	printf("\n");
+}
 
-	for(i=0; i < NUMBERofVERTICES; i++){
-		printf("%4c", 'A' + i);
+void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
 
-		for(j=0; j < NUMBERofVERTICES; j++){
-			printf("%4d", vertices[i][j]);
+	cout<< "    ";
+	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
+	cout<<endl;
+
+	for(int i=0; i < NUMBERofVERTICES; i++){
+		cout << setw(4) << char ('A' + i);
+
+		for(int j=0; j < NUMBERofVERTICES; j++){
+			cout << setw(4) <<  vertices[i][j];
 		}
-
-		printf("\n");
+		cout<< endl;
 	}
+	cout<<endl;
 
-	printf("\n");
-
-	/*for (int j=0; j<NUMBERofVERTICES; ++j){
-	cout << setw(4) << j << "  " << setw(4) << vertices[j][0] << "\n";
-	}*/
 }
 
 int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
@@ -156,6 +153,10 @@ void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf){
 
 	int i, j, inf = 2147483647;
 
+	if(shuf==-1) {
+		inf=0;
+		shuf=0;
+	}
 	for(i=0; i<NUMBERofVERTICES; i++){
 		for(j=0; j<NUMBERofVERTICES; j++){
 			if(i==j){					// the same vertices, distance = 0			
@@ -200,10 +201,10 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	int *minimumDistance, inf = 2147483647;
 	int vertices[NUMBERofVERTICES][NUMBERofVERTICES];
-
+	int toPrint[NUMBERofVERTICES][NUMBERofVERTICES];
 
 	// inicialization of data
-	init(vertices);	
+	init(vertices,0);	
 
 	// print input
 	cout << "Input matrix of distances\n\n";
@@ -228,20 +229,24 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		minimumDistance = dijkstraDistance(vertices);
 
-		// print the results
-		cout << "\nMinimum distances from node "<< i<< endl;
-		cout << " -Dijkstra" << endl;
+		//// print the results
+		//cout << "\nMinimum distances from node "<< i<< endl;
+		//cout << " -Dijkstra" << endl;
 
 		for (int j=0; j<NUMBERofVERTICES; j++){
-			cout << setw(4) << j << "  " << setw(4) << minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES] << "\n";
+		//	cout << setw(4) << j << "  " << setw(4) << minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES] << "\n";
+		toPrint[i][j]=minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES];
 		}
-
-		delete [] minimumDistance;		// free memory
+		delete [] minimumDistance;
 
 	}
-	init(vertices,0);
+
+	cout << "\nDijkstra" << endl;
+	printVertices(toPrint);
+	init(vertices,-1);
 	cout << "\nFloydWarshall" << endl;
 	floydWarshall(vertices);
+	printVertices(vertices);
 
 	system ("pause");
 	return 0;
