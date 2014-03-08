@@ -19,10 +19,54 @@ void findNearest (int s, int e, int minimumDistance[NUMBERofVERTICES], bool conn
 void init (int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int=0);
 void updateMinimumDistance (int s, int e, int mv, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]);
 
+void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
+	int i, j, k;
+	for(k=0; k<NUMBERofVERTICES; k++) {
+		for(i=0; i<NUMBERofVERTICES; i++){
+			for (j=0; j<NUMBERofVERTICES; j++){
+				/* If i and j are different nodes and if 
+				the paths between i and k and between
+				k and j exist, do */
+				if((vertices[i][k]*vertices[k][j] != 0) && (i != j)){
+					/* See if you can't get a shorter path
+					between i and j by interspacing
+					k somewhere along the current
+					path */
+					if((vertices[i][k] + vertices[k][j] < vertices[i][j]) ||(vertices[i][j] == 0)){
+						vertices[i][j] = vertices[i][k] + vertices[k][j];
+					}
+				}
+			}
+		}
+	}
+
+	printf("    ");
+	for(i=0; i < NUMBERofVERTICES; i++){
+		printf("%4c", 'A' + i);
+	}
+	printf("\n");
+
+	for(i=0; i < NUMBERofVERTICES; i++){
+		printf("%4c", 'A' + i);
+
+		for(j=0; j < NUMBERofVERTICES; j++){
+			printf("%4d", vertices[i][j]);
+		}
+
+		printf("\n");
+	}
+
+	printf("\n");
+
+	/*for (int j=0; j<NUMBERofVERTICES; ++j){
+	cout << setw(4) << j << "  " << setw(4) << vertices[j][0] << "\n";
+	}*/
+}
+
 int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 	//    We essentially build a tree.  We start with only node 0 connected
 	//    to the tree, and this is indicated by setting CONNECTED[0] = TRUE.
-	// test commit MAREK :P
+
 	//    We initialize minimumDistance[I] to the one step distance from node 0 to node I.
 
 	//    Now we search among the unconnected nodes for the node MV whose minimum
@@ -72,7 +116,7 @@ int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 	return minimumDistance;
 }
 
-void findNearest (int first, int last, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int *distance, int *index){
+void findNearest(int first, int last, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int *distance, int *index){
 	// output: 
 	//	- int *distance, the distance from node 0 to the nearest unconnected node in the range first to last
 	//	- int *index, the index of the nearest unconnected node in the range first to last.
@@ -89,8 +133,7 @@ void findNearest (int first, int last, int minimumDistance[NUMBERofVERTICES], bo
 	}
 }
 
-void init (int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf)
-{
+void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf){
 	//    The graph uses 6 nodes, and has the following diagram and
 	//    distance matrix:
 
@@ -135,7 +178,7 @@ void init (int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf)
 	vertices[(4+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = vertices[(5+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 8;
 }
 
-void updateMinimumDistance (int first, int last, int mainIndex, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]){
+void updateMinimumDistance(int first, int last, int mainIndex, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]){
 	int i, inf = 2147483647;
 
 	for(i=first; i <= last; i++){
@@ -158,10 +201,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	int *minimumDistance, inf = 2147483647;
 	int vertices[NUMBERofVERTICES][NUMBERofVERTICES];
 
-	
+
 	// inicialization of data
 	init(vertices);	
-	
+
 	// print input
 	cout << "Input matrix of distances\n\n";
 
@@ -177,8 +220,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		cout << "\n";
 	}
 
-	for (int i = 0; i < NUMBERofVERTICES; i++)
-	{
+	for(int i = 0; i < NUMBERofVERTICES; i++){
 
 		// inicialization of data
 		init(vertices,-i+NUMBERofVERTICES);	
@@ -187,7 +229,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		minimumDistance = dijkstraDistance(vertices);
 
 		// print the results
-		cout << "\nMinimum distances from node "<< i<<endl;
+		cout << "\nMinimum distances from node "<< i<< endl;
+		cout << " -Dijkstra" << endl;
 
 		for (int j=0; j<NUMBERofVERTICES; j++){
 			cout << setw(4) << j << "  " << setw(4) << minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES] << "\n";
@@ -195,8 +238,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		delete [] minimumDistance;		// free memory
 
-
 	}
+	init(vertices,0);
+	cout << "\nFloydWarshall" << endl;
+	floydWarshall(vertices);
 
 	system ("pause");
 	return 0;
