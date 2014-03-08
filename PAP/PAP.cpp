@@ -12,7 +12,7 @@
 
 using namespace std;
 
-# define NUMBERofVERTICES 6
+# define NUMBERofVERTICES 7
 
 int *dijkstraDistance (int vertices[NUMBERofVERTICES][NUMBERofVERTICES]);
 void findNearest (int s, int e, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int *d, int *v);
@@ -43,7 +43,7 @@ void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 }
 
 void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
-
+	int inf = 2147483647;
 	cout<< "    ";
 	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
 	cout<<endl;
@@ -52,7 +52,11 @@ void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
 		cout << setw(4) << char ('A' + i);
 
 		for(int j=0; j < NUMBERofVERTICES; j++){
-			cout << setw(4) <<  vertices[i][j];
+			if(vertices[i][j] == inf){
+				cout << setw(4) << "inf";
+			}else{
+				cout << setw(4) <<  vertices[i][j];
+			}
 		}
 		cout<< endl;
 	}
@@ -169,14 +173,29 @@ void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf){
 	}
 
 	// our task
-	vertices[(0+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = vertices[(1+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 40;
+	/*vertices[(0+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = vertices[(1+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 40;
 	vertices[(0+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = vertices[(2+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 15;
 	vertices[(1+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = vertices[(2+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 20;
 	vertices[(1+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = vertices[(3+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 10;
 	vertices[(1+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = vertices[(4+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 25;
 	vertices[(2+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = vertices[(3+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 100;
 	vertices[(1+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = vertices[(5+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 6;
-	vertices[(4+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = vertices[(5+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 8;
+	vertices[(4+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = vertices[(5+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 8;*/
+
+	vertices[(0+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 8;
+	vertices[(0+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = 1;
+	vertices[(0+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 2;
+	vertices[(1+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = 8;
+	vertices[(2+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 8;
+	vertices[(2+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 9;
+	vertices[(2+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = 2;
+	vertices[(2+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = 3;
+	vertices[(3+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 1;
+	vertices[(3+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 2;
+	vertices[(4+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 2;
+	vertices[(5+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 8;
+	vertices[(5+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 3;
+	vertices[(5+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 2;
 }
 
 void updateMinimumDistance(int first, int last, int mainIndex, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]){
@@ -228,14 +247,14 @@ int _tmain(int argc, _TCHAR* argv[])
 
 
 		minimumDistance = dijkstraDistance(vertices);
-		//WTF
+
 		//// print the results
 		//cout << "\nMinimum distances from node "<< i<< endl;
 		//cout << " -Dijkstra" << endl;
 
 		for (int j=0; j<NUMBERofVERTICES; j++){
-		//	cout << setw(4) << j << "  " << setw(4) << minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES] << "\n";
-		toPrint[i][j]=minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES];
+			//	cout << setw(4) << j << "  " << setw(4) << minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES] << "\n";
+			toPrint[i][j]=minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES];
 		}
 		delete [] minimumDistance;
 
@@ -251,4 +270,3 @@ int _tmain(int argc, _TCHAR* argv[])
 	system ("pause");
 	return 0;
 }
-
