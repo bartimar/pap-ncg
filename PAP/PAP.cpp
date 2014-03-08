@@ -53,7 +53,7 @@ void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
 
 		for(int j=0; j < NUMBERofVERTICES; j++){
 			if(vertices[i][j] == inf){
-				cout << setw(4) << "inf";
+				cout << setw(4) << "Inf";
 			}else{
 				cout << setw(4) <<  vertices[i][j];
 			}
@@ -214,8 +214,6 @@ void updateMinimumDistance(int first, int last, int mainIndex, bool connected[NU
 	}
 }
 
-
-
 int _tmain(int argc, _TCHAR* argv[])
 {
 	int *minimumDistance, inf = 2147483647;
@@ -260,10 +258,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	}
 
-	cout << "\nDijkstra" << endl;
+	cout <<"\n\n Dijkstra" << endl;
 	printVertices(toPrint);
 	init(vertices,-1);
-	cout << "\nFloydWarshall" << endl;
+	cout <<"\n FloydWarshall" << endl;
 	floydWarshall(vertices);
 	printVertices(vertices);
 
