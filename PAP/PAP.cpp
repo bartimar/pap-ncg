@@ -22,7 +22,7 @@ void updateMinimumDistance (int s, int e, int mv, bool connected[NUMBERofVERTICE
 int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 	//    We essentially build a tree.  We start with only node 0 connected
 	//    to the tree, and this is indicated by setting CONNECTED[0] = TRUE.
-
+	// test commit
 	//    We initialize minimumDistance[I] to the one step distance from node 0 to node I.
 
 	//    Now we search among the unconnected nodes for the node MV whose minimum
