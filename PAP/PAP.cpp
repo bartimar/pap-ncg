@@ -158,7 +158,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	int *minimumDistance, inf = 2147483647;
 	int vertices[NUMBERofVERTICES][NUMBERofVERTICES];
 
-
+	
+	// inicialization of data
+	init(vertices);	
+	
 	// print input
 	cout << "Input matrix of distances\n\n";
 
