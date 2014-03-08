@@ -228,7 +228,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 
 		minimumDistance = dijkstraDistance(vertices);
-
+		//WTF
 		//// print the results
 		//cout << "\nMinimum distances from node "<< i<< endl;
 		//cout << " -Dijkstra" << endl;
