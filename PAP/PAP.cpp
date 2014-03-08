@@ -159,26 +159,26 @@ int _tmain(int argc, _TCHAR* argv[])
 	int vertices[NUMBERofVERTICES][NUMBERofVERTICES];
 
 
+	// print input
+	cout << "Input matrix of distances\n\n";
+
+	for(int k=0; k<NUMBERofVERTICES; k++){
+		for(int j=0; j<NUMBERofVERTICES; j++){
+			if(vertices[k][j] == inf){
+				cout << setw(6) << "Inf";
+
+			}else{
+				cout << setw(6) <<  vertices[k][j];
+			}
+		}
+		cout << "\n";
+	}
+
 	for (int i = 0; i < NUMBERofVERTICES; i++)
 	{
 
 		// inicialization of data
 		init(vertices,-i+NUMBERofVERTICES);	
-
-		// print input
-		cout << "Input matrix of distances\n\n";
-
-		for(int k=0; k<NUMBERofVERTICES; k++){
-			for(int j=0; j<NUMBERofVERTICES; j++){
-				if(vertices[k][j] == inf){
-					cout << setw(6) << "Inf";
-
-				}else{
-					cout << setw(6) <<  vertices[k][j];
-				}
-			}
-			cout << "\n";
-		}
 
 
 		minimumDistance = dijkstraDistance(vertices);
