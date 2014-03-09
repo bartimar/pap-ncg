@@ -257,6 +257,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	floydWarshall(vertices);
 	printVertices(vertices);
 
+	bool same=true;
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+	{
+		for (int j = 0; j < NUMBERofVERTICES; j++)
+		{
+			if(toPrint[i][j] != vertices[i][j]) { 
+				same=false;
+				break;
+			}
+		}
+	}
+
+	if(same) cout<< "Dijkstra and FloydWarshall outputs are the same. OK!"<<endl<<endl;
+	else cout<< "Dijkstra and FloydWarshall outputs are not the same. ERROR!"<<endl<<endl;
+
 	system ("pause");
 	return 0;
 }
