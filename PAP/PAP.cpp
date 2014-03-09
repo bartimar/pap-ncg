@@ -13,6 +13,7 @@
 using namespace std;
 
 # define NUMBERofVERTICES 7
+const int inf = INT_MAX;
 
 int *dijkstraDistance (int vertices[NUMBERofVERTICES][NUMBERofVERTICES]);
 void findNearest (int s, int e, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int *d, int *v);
@@ -43,7 +44,7 @@ void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 }
 
 void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
-	int inf = 2147483647;
+	
 	cout<< "    ";
 	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
 	cout<<endl;
@@ -76,7 +77,7 @@ int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 	//    to I is less than that recorded in minimumDistance[I], and if so, we can reduce
 	//    the distance.
 	bool *connected;
-	int i, *minimumDistance, inf = 2147483647;
+	int i, *minimumDistance;
 	int mainDistance, mainIndex;
 	int myFirst = 1, myLast=NUMBERofVERTICES-1, distance, index, myStep;
 
@@ -122,11 +123,10 @@ void findNearest(int first, int last, int minimumDistance[NUMBERofVERTICES], boo
 	//	- int *distance, the distance from node 0 to the nearest unconnected node in the range first to last
 	//	- int *index, the index of the nearest unconnected node in the range first to last.
 
-	int i, inf=2147483647;
 	*distance = inf;
 	*index = -1;
 
-	for(i=first; i<=last; i++){
+	for(int i=first; i<=last; i++){
 		if(!connected[i] && minimumDistance[i] < *distance){
 			*distance = minimumDistance[i];
 			*index = i;
@@ -154,20 +154,19 @@ void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf){
 
 	//    Output, int vertices[NUMBERofVERTICES][NUMBERofVERTICES], the distance of the direct link between
 	//    nodes I and J.
-
-	int i, j, inf = 2147483647;
+	int _inf=inf;
 
 	if(shuf==-1) {
-		inf=0;
+		_inf=0;
 		shuf=0;
 	}
-	for(i=0; i<NUMBERofVERTICES; i++){
-		for(j=0; j<NUMBERofVERTICES; j++){
+	for(int i=0; i<NUMBERofVERTICES; i++){
+		for(int j=0; j<NUMBERofVERTICES; j++){
 			if(i==j){					// the same vertices, distance = 0			
 				vertices[i][i] = 0;
 
 			}else{
-				vertices[i][j] = inf;	// inicialization of all the other vertices to inf
+				vertices[i][j] = _inf;	// inicialization of all the other vertices to inf
 			}
 		}
 	}
@@ -199,9 +198,8 @@ void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf){
 }
 
 void updateMinimumDistance(int first, int last, int mainIndex, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]){
-	int i, inf = 2147483647;
-
-	for(i=first; i <= last; i++){
+	
+	for(int i=first; i <= last; i++){
 		if(!connected[i]){
 
 			if(vertices[mainIndex][i] < inf){
@@ -216,7 +214,7 @@ void updateMinimumDistance(int first, int last, int mainIndex, bool connected[NU
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int *minimumDistance, inf = 2147483647;
+	int *minimumDistance;
 	int vertices[NUMBERofVERTICES][NUMBERofVERTICES];
 	int toPrint[NUMBERofVERTICES][NUMBERofVERTICES];
 
