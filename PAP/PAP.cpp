@@ -28,14 +28,13 @@ void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 				/* If i and j are different nodes and if 
 				the paths between i and k and between
 				k and j exist, do */
-				if((vertices[i][k]*vertices[k][j] != 0) && (i != j)){
+				if(vertices[i][k] == inf || vertices[k][j] == inf || i == j) continue;
 					/* See if you can't get a shorter path
 					between i and j by interspacing
 					k somewhere along the current
 					path */
 					if((vertices[i][k] + vertices[k][j] < vertices[i][j]) ||(vertices[i][j] == 0)){
 						vertices[i][j] = vertices[i][k] + vertices[k][j];
-					}
 				}
 			}
 		}
@@ -53,7 +52,7 @@ void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
 		cout << setw(4) << char ('A' + i);
 
 		for(int j=0; j < NUMBERofVERTICES; j++){
-			if(vertices[i][j] == inf || (vertices[i][j]==0 && i!=j) ){
+			if(vertices[i][j] == inf){
 				cout << setw(4) << "Inf";
 			}else{
 				cout << setw(4) <<  vertices[i][j];
@@ -154,19 +153,14 @@ void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf){
 
 	//    Output, int vertices[NUMBERofVERTICES][NUMBERofVERTICES], the distance of the direct link between
 	//    nodes I and J.
-	int _inf=inf;
-
-	if(shuf==-1) {
-		_inf=0;
-		shuf=0;
-	}
+	
 	for(int i=0; i<NUMBERofVERTICES; i++){
 		for(int j=0; j<NUMBERofVERTICES; j++){
 			if(i==j){					// the same vertices, distance = 0			
 				vertices[i][i] = 0;
 
 			}else{
-				vertices[i][j] = _inf;	// inicialization of all the other vertices to inf
+				vertices[i][j] = inf;	// inicialization of all the other vertices to inf
 			}
 		}
 	}
@@ -258,7 +252,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	cout <<"\n\n Dijkstra" << endl;
 	printVertices(toPrint);
-	init(vertices,-1);
+	init(vertices,0);
 	cout <<"\n FloydWarshall" << endl;
 	floydWarshall(vertices);
 	printVertices(vertices);
