@@ -52,7 +52,7 @@ void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
 		cout << setw(4) << char ('A' + i);
 
 		for(int j=0; j < NUMBERofVERTICES; j++){
-			if(vertices[i][j] == inf){
+			if(vertices[i][j] == inf || (vertices[i][j]==0 && i!=j) ){
 				cout << setw(4) << "Inf";
 			}else{
 				cout << setw(4) <<  vertices[i][j];
