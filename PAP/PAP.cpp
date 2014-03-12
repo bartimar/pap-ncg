@@ -13,7 +13,7 @@ using namespace std;
 const int inf = INT_MAX;
 
 int *dijkstraDistance (int vertices[NUMBERofVERTICES][NUMBERofVERTICES]);
-void findNearest (int s, int e, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int *d, int *v);
+void findNearest (int s, int e, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int& d, int& v);
 void init (int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int=0, int=1);
 void updateMinimumDistance (int s, int e, int mv, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]);
 
@@ -80,7 +80,7 @@ int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 		mainDistance = inf;
 		mainIndex = -1; 
 
-		findNearest(myFirst, myLast, minimumDistance, connected, &distance, &index);
+		findNearest(myFirst, myLast, minimumDistance, connected, distance, index);
 
 		if(distance < mainDistance){
 			mainDistance = distance;
@@ -98,18 +98,18 @@ int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 	return minimumDistance;
 }
 
-void findNearest(int first, int last, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int *distance, int *index){
+void findNearest(int first, int last, int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int& distance, int& index){
 	// output: 
-	//	- int *distance, the distance from node 0 to the nearest unconnected node in the range first to last
-	//	- int *index, the index of the nearest unconnected node in the range first to last.
+	//	- int distance, the distance from node 0 to the nearest unconnected node in the range first to last
+	//	- int index, the index of the nearest unconnected node in the range first to last.
 
-	*distance = inf;
-	*index = -1;
+	distance = inf;
+	index = -1;
 
 	for(int i=first; i<=last; i++){
-		if(!connected[i] && minimumDistance[i] < *distance){
-			*distance = minimumDistance[i];
-			*index = i;
+		if(!connected[i] && minimumDistance[i] < distance){
+			distance = minimumDistance[i];
+			index = i;
 		}
 	}
 }
