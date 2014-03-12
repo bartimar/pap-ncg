@@ -18,10 +18,10 @@ void init (int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int=0, int=1);
 void updateMinimumDistance (int mv, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]);
 
 void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
-	int i, j, k;
-	for(k=0; k<NUMBERofVERTICES; k++) {
-		for(i=0; i<NUMBERofVERTICES; i++){
-			for (j=0; j<NUMBERofVERTICES; j++){
+
+	for(int k=0; k<NUMBERofVERTICES; k++) {
+		for(int i=0; i<NUMBERofVERTICES; i++){
+			for (int j=0; j<NUMBERofVERTICES; j++){
 				if(vertices[i][k] == inf || vertices[k][j] == inf || i == j) continue;
 
 				if((vertices[i][k] + vertices[k][j] < vertices[i][j]) ||(vertices[i][j] == 0)){
