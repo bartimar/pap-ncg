@@ -23,8 +23,7 @@ void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 		for(int i=0; i<NUMBERofVERTICES; i++){
 			for (int j=0; j<NUMBERofVERTICES; j++){
 				if(vertices[i][k] == inf || vertices[k][j] == inf || i == j) continue;
-
-				if((vertices[i][k] + vertices[k][j] < vertices[i][j]) ||(vertices[i][j] == 0)){
+				if(vertices[i][k] + vertices[k][j] < vertices[i][j]){
 					vertices[i][j] = vertices[i][k] + vertices[k][j];
 				}
 			}
