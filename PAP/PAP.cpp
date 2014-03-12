@@ -9,15 +9,15 @@
 
 using namespace std;
 
-# define NUMBERofVERTICES 7
+int NUMBERofVERTICES;
 const int inf = INT_MAX;
 
-int *dijkstraDistance (int vertices[NUMBERofVERTICES][NUMBERofVERTICES]);
-void findNearest (int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int& d, int& v);
-void init (int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int=0, int=1);
-void updateMinimumDistance (int mv, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]);
+int *dijkstraDistance (int** vertices);
+void findNearest (int* minimumDistance, bool* connected, int& d, int& v);
+void init (int** vertices,int=0, int=1);
+void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance);
 
-void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
+void floydWarshall(int** vertices){
 
 	for(int k=0; k<NUMBERofVERTICES; k++) {
 		for(int i=0; i<NUMBERofVERTICES; i++){
@@ -32,7 +32,7 @@ void floydWarshall(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 
 }
 
-void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
+void printVertices(int** vertices) {
 
 	cout<< "    ";
 	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
@@ -54,7 +54,7 @@ void printVertices(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]) {
 
 }
 
-int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
+int *dijkstraDistance(int** vertices){
 	bool *connected;
 	int *minimumDistance;
 	int myFirst = 1, myLast=NUMBERofVERTICES-1, distance, index;
@@ -88,7 +88,7 @@ int *dijkstraDistance(int vertices[NUMBERofVERTICES][NUMBERofVERTICES]){
 	return minimumDistance;
 }
 
-void findNearest(int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofVERTICES], int& distance, int& index){
+void findNearest(int* minimumDistance, bool *connected, int& distance, int& index){
 	// output: 
 	//	- int distance, the distance from node 0 to the nearest unconnected node in the range first to last
 	//	- int index, the index of the nearest unconnected node in the range first to last.
@@ -104,7 +104,7 @@ void findNearest(int minimumDistance[NUMBERofVERTICES], bool connected[NUMBERofV
 	}
 }
 
-void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf, int example){
+void init(int** vertices,int shuf, int example){
 	
 	for(int i=0; i<NUMBERofVERTICES; i++){
 		for(int j=0; j<NUMBERofVERTICES; j++){
@@ -141,10 +141,58 @@ void init(int vertices[NUMBERofVERTICES][NUMBERofVERTICES],int shuf, int example
 		vertices[(5+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 3;
 		vertices[(5+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 2;
 		break;
+	case 3:
+		vertices[(0+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 8;
+		vertices[(0+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = 1;
+		vertices[(0+shuf)%NUMBERofVERTICES][(11+shuf)%NUMBERofVERTICES] = 1;
+		vertices[(0+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 2;
+		vertices[(1+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = 8;
+		vertices[(2+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 8;
+		vertices[(2+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 9;
+		vertices[(2+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = 2;
+		vertices[(2+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = 3;
+		vertices[(3+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 1;
+		vertices[(3+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 2;
+		vertices[(4+shuf)%NUMBERofVERTICES][(0+shuf)%NUMBERofVERTICES] = 2;
+		vertices[(5+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 8;
+		vertices[(5+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 3;
+		vertices[(6+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = 22;
+		vertices[(6+shuf)%NUMBERofVERTICES][(8+shuf)%NUMBERofVERTICES] = 102;
+		vertices[(6+shuf)%NUMBERofVERTICES][(9+shuf)%NUMBERofVERTICES] = 8;
+		vertices[(6+shuf)%NUMBERofVERTICES][(10+shuf)%NUMBERofVERTICES] = 9;
+		vertices[(6+shuf)%NUMBERofVERTICES][(11+shuf)%NUMBERofVERTICES] = 11;
+		vertices[(6+shuf)%NUMBERofVERTICES][(12+shuf)%NUMBERofVERTICES] = 22;
+		vertices[(7+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 8;
+		vertices[(7+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = 3;
+		vertices[(7+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = 6;
+		vertices[(7+shuf)%NUMBERofVERTICES][(8+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(7+shuf)%NUMBERofVERTICES][(9+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(7+shuf)%NUMBERofVERTICES][(11+shuf)%NUMBERofVERTICES] = 11;
+		vertices[(8+shuf)%NUMBERofVERTICES][(11+shuf)%NUMBERofVERTICES] = 10;
+		vertices[(8+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 1;
+		vertices[(8+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 17;
+		vertices[(8+shuf)%NUMBERofVERTICES][(10+shuf)%NUMBERofVERTICES] = 3;
+		vertices[(9+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 4;
+		vertices[(10+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 20;
+		vertices[(11+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 1;
+		vertices[(12+shuf)%NUMBERofVERTICES][(6+shuf)%NUMBERofVERTICES] = 3;
+		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(12+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(8+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
+		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
+
 	}
 }
 
-void updateMinimumDistance(int mainIndex, bool connected[NUMBERofVERTICES], int vertices[NUMBERofVERTICES][NUMBERofVERTICES], int minimumDistance[NUMBERofVERTICES]){
+void updateMinimumDistance(int mainIndex, bool* connected, int** vertices, int* minimumDistance){
 	for(int i=1;i< NUMBERofVERTICES; i++){
 		if(connected[i] || vertices[mainIndex][i] == inf) continue;
 		if(minimumDistance[mainIndex] + vertices[mainIndex][i] < minimumDistance[i]){
@@ -153,11 +201,47 @@ void updateMinimumDistance(int mainIndex, bool connected[NUMBERofVERTICES], int 
 	}
 }
 
+void initExample(int& example) {
+
+	cout<<"Enter example: 1, 2 or 3"<<endl;
+	cin>>example;
+
+
+	switch(example) {
+	case 1:
+		NUMBERofVERTICES=6;
+		break;
+	case 2:
+		NUMBERofVERTICES=7;
+		break;
+	case 3:
+		NUMBERofVERTICES=13;
+		break;
+	default:
+		cout<<"Bad parameter. Exit"<<endl;
+		exit(1);
+	}
+
+}
+
+void alloc2Darray(int**& arr) {
+
+	arr=new int*[NUMBERofVERTICES];
+	
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+	{
+		arr[i]=new int[NUMBERofVERTICES];
+	}
+}
+
 int _tmain(int argc, _TCHAR* argv[]){
 	int *minimumDistance;
-	int vertices[NUMBERofVERTICES][NUMBERofVERTICES];
-	int toPrint[NUMBERofVERTICES][NUMBERofVERTICES];
-	int example=2;
+	int** vertices=NULL,**toPrint=NULL;
+	int example;
+	
+	initExample(example);
+	alloc2Darray(vertices);
+	alloc2Darray(toPrint);
 	// inicialization of data
 	init(vertices, 0, example);	
 
