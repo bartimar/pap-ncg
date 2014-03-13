@@ -234,18 +234,19 @@ void alloc2Darray(int**& arr) {
 	}
 }
 
-int _tmain(int argc, _TCHAR* argv[]){
-	int *minimumDistance;
-	int** vertices=NULL,**toPrint=NULL;
-	int example;
-	
-	initExample(example);
-	alloc2Darray(vertices);
-	alloc2Darray(toPrint);
-	// inicialization of data
-	init(vertices, 0, example);	
+void dealloc2Darray(int**& arr) {
 
-	// print input
+	
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+	{
+		delete arr[i];
+	}
+
+	delete [] arr;
+}
+
+void printInput(int** vertices) {
+
 	cout << "Input matrix of distances" << endl << endl;
 
 	for(int k=0; k<NUMBERofVERTICES; k++){
@@ -259,7 +260,23 @@ int _tmain(int argc, _TCHAR* argv[]){
 		}
 		cout << endl;
 	}
+}
 
+int _tmain(int argc, _TCHAR* argv[]){
+	int *minimumDistance;
+	int** vertices=NULL,**toPrint=NULL;
+	int example;
+	
+	initExample(example);
+	alloc2Darray(vertices);
+	alloc2Darray(toPrint);
+	// inicialization of data
+	init(vertices, 0, example);	
+
+	// print input
+	printInput(vertices);
+
+	//launch Dijkstra
 	for(int i = 0; i < NUMBERofVERTICES; i++){
 		// inicialization of data
 		init(vertices, -i+NUMBERofVERTICES, example);	
@@ -275,11 +292,13 @@ int _tmain(int argc, _TCHAR* argv[]){
 	cout << endl << endl << " Dijkstra" << endl;
 	printVertices(toPrint);
 
+	//launch FloydWarshall
 	init(vertices, 0, example);
 	cout << endl << " FloydWarshall" << endl;
 	floydWarshall(vertices);
 	printVertices(vertices);
 
+	//check if the outputs were the same
 	bool same=true;
 	for (int i = 0; i < NUMBERofVERTICES; i++){
 		for (int j = 0; j < NUMBERofVERTICES; j++){
@@ -292,6 +311,10 @@ int _tmain(int argc, _TCHAR* argv[]){
 
 	if(same) cout << "Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
 	else cout << "Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
+
+	
+	dealloc2Darray(vertices);
+	dealloc2Darray(toPrint);
 
 	system ("pause");
 	return 0;
