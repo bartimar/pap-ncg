@@ -21,8 +21,9 @@ void floydWarshall(int** vertices){
 
 	for(int k=0; k<NUMBERofVERTICES; k++) {
 		for(int i=0; i<NUMBERofVERTICES; i++){
-			for (int j=0; j<NUMBERofVERTICES; j++){
-				if(vertices[i][k] == inf || vertices[k][j] == inf || i == j) continue;
+			if(vertices[i][k] == inf) continue;
+				for (int j=0; j<NUMBERofVERTICES; j++){
+				if(vertices[k][j] == inf || i == j) continue;
 				if(vertices[i][k] + vertices[k][j] < vertices[i][j]){
 					vertices[i][j] = vertices[i][k] + vertices[k][j];
 				}
@@ -263,6 +264,7 @@ void printInput(int** vertices) {
 }
 
 int _tmain(int argc, _TCHAR* argv[]){
+	//CUDA - spoustet na 1,2,4,6,8,12,24
 	int *minimumDistance;
 	int** vertices=NULL,**toPrint=NULL;
 	int example;
