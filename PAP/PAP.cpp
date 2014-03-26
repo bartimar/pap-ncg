@@ -189,8 +189,19 @@ void init(int** vertices,int shuf, int example){
 		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
 		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
 		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
-
+		
+	case 0: //random
+		int val;
+		for (int i = 0; i < NUMBERofVERTICES; i++)
+		{
+			for (int j = 0; j < NUMBERofVERTICES; j++)
+			{				
+			vertices[i][j]= (val=rand()%150) ? val : inf ;
+			}
+		}
 	}
+
+
 }
 
 void updateMinimumDistance(int mainIndex, bool* connected, int** vertices, int* minimumDistance){
@@ -204,7 +215,7 @@ void updateMinimumDistance(int mainIndex, bool* connected, int** vertices, int* 
 
 void initExample(int& example) {
 
-	cout<<"Enter example: 1, 2 or 3"<<endl;
+	cout<<"Enter example: 1, 2, 3 or 0 (for random)"<<endl;
 	cin>>example;
 
 
@@ -217,6 +228,9 @@ void initExample(int& example) {
 		break;
 	case 3:
 		NUMBERofVERTICES=13;
+		break;
+	case 0:
+		NUMBERofVERTICES=rand()%1000+100;
 		break;
 	default:
 		cout<<"Bad parameter. Exit"<<endl;
@@ -268,6 +282,7 @@ int _tmain(int argc, _TCHAR* argv[]){
 	int *minimumDistance;
 	int** vertices=NULL,**toPrint=NULL;
 	int example;
+	srand(time(NULL));
 	
 	initExample(example);
 	alloc2Darray(vertices);
@@ -306,6 +321,7 @@ int _tmain(int argc, _TCHAR* argv[]){
 		for (int j = 0; j < NUMBERofVERTICES; j++){
 			if(toPrint[i][j] != vertices[i][j]){ 
 				same=false;
+				cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
 				break;
 			}
 		}
