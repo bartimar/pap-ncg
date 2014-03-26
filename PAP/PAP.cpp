@@ -321,8 +321,8 @@ int _tmain(int argc, _TCHAR* argv[]){
 		for (int j = 0; j < NUMBERofVERTICES; j++){
 			if(toPrint[i][j] != vertices[i][j]){ 
 				same=false;
-				cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
-				break;
+				//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
+				//break;
 			}
 		}
 	}
