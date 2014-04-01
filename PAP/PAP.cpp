@@ -14,7 +14,7 @@ const int inf = INT_MAX;
 
 int *dijkstraDistance (int** vertices);
 void findNearest (int* minimumDistance, bool* connected, int& d, int& v);
-void init (int** vertices,int=0, int=1);
+void init (int**& vertices,int=0, int=1);
 void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance);
 
 void floydWarshall(int** vertices){
@@ -105,15 +105,40 @@ void findNearest(int* minimumDistance, bool *connected, int& distance, int& inde
 	}
 }
 
-void init(int** vertices,int shuf, int example){
+void alloc2Darray(int**& arr) {
+
+	arr=new int*[NUMBERofVERTICES];
 	
-	for(int i=0; i<NUMBERofVERTICES; i++){
-		for(int j=0; j<NUMBERofVERTICES; j++){
-			if(i==j) vertices[i][i] = 0;
-			else vertices[i][j] = inf;	// inicialization of all the other vertices to inf
-		}
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+		arr[i]=new int[NUMBERofVERTICES];
+	{
+	}
+}
+
+void dealloc2Darray(int**& arr) {
+
+	
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+	{
+		delete arr[i];
 	}
 
+	delete [] arr;
+	arr=NULL;
+}
+
+void init(int**& vertices,int shuf, int example){
+	
+	static bool initialized = false;
+
+	if(!initialized) {
+		for(int i=0; i<NUMBERofVERTICES; i++){
+			for(int j=0; j<NUMBERofVERTICES; j++){
+				if(i==j) vertices[i][i] = 0;
+				else vertices[i][j] = inf;	// inicialization of all the other vertices to inf
+			}
+		}
+	}
 	switch(example){
 
 	case 1:
@@ -189,16 +214,31 @@ void init(int** vertices,int shuf, int example){
 		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
 		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
 		vertices[(11+shuf)%NUMBERofVERTICES][(7+shuf)%NUMBERofVERTICES] = 7;
-		
+		break;
 	case 0: //random
 		int val;
+		if(initialized) {
+			int** newarr;
+			alloc2Darray(newarr);
+			for (int i = 0; i < NUMBERofVERTICES; i++)
+			{
+				for (int j = 0; j < NUMBERofVERTICES; j++)
+				{		
+					newarr[i][j]= vertices[(i+shuf)%NUMBERofVERTICES][(j+shuf)%NUMBERofVERTICES];
+				}
+			}
+			dealloc2Darray(vertices);
+			vertices=newarr;
+			break;
+		}
 		for (int i = 0; i < NUMBERofVERTICES; i++)
 		{
 			for (int j = 0; j < NUMBERofVERTICES; j++)
 			{				
-			vertices[i][j]= (val=rand()%150) ? val : inf ;
+				vertices[i][j]= (val=rand()%150) ? val : inf ;
 			}
 		}
+		initialized=true;
 	}
 
 
@@ -230,7 +270,7 @@ void initExample(int& example) {
 		NUMBERofVERTICES=13;
 		break;
 	case 0:
-		NUMBERofVERTICES=rand()%1000+100;
+		NUMBERofVERTICES=15;
 		break;
 	default:
 		cout<<"Bad parameter. Exit"<<endl;
@@ -239,26 +279,6 @@ void initExample(int& example) {
 
 }
 
-void alloc2Darray(int**& arr) {
-
-	arr=new int*[NUMBERofVERTICES];
-	
-	for (int i = 0; i < NUMBERofVERTICES; i++)
-	{
-		arr[i]=new int[NUMBERofVERTICES];
-	}
-}
-
-void dealloc2Darray(int**& arr) {
-
-	
-	for (int i = 0; i < NUMBERofVERTICES; i++)
-	{
-		delete arr[i];
-	}
-
-	delete [] arr;
-}
 
 void printInput(int** vertices) {
 
@@ -282,7 +302,7 @@ int _tmain(int argc, _TCHAR* argv[]){
 	int *minimumDistance;
 	int** vertices=NULL,**toPrint=NULL;
 	int example;
-	srand(time(NULL));
+	srand((unsigned int)time(0));
 	
 	initExample(example);
 	alloc2Darray(vertices);
@@ -305,12 +325,15 @@ int _tmain(int argc, _TCHAR* argv[]){
 		}
 		delete [] minimumDistance;
 	}
-
+	
 	cout << endl << endl << " Dijkstra" << endl;
 	printVertices(toPrint);
 
+	
+	printInput(vertices);
+
 	//launch FloydWarshall
-	init(vertices, 0, example);
+	//init(vertices, 0, example);
 	cout << endl << " FloydWarshall" << endl;
 	floydWarshall(vertices);
 	printVertices(vertices);
@@ -327,8 +350,8 @@ int _tmain(int argc, _TCHAR* argv[]){
 		}
 	}
 
-	if(same) cout << "Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
-	else cout << "Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
+	if(same) cout <<"NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
+	else cout << "NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
 
 	
 	dealloc2Darray(vertices);
