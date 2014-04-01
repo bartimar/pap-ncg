@@ -224,7 +224,7 @@ void init(int**& vertices,int shuf, int example){
 			{
 				for (int j = 0; j < NUMBERofVERTICES; j++)
 				{		
-					newarr[i][j]= vertices[(i+shuf)%NUMBERofVERTICES][(j+shuf)%NUMBERofVERTICES];
+					newarr[i][j]= vertices[(i+1)%NUMBERofVERTICES][(j+1)%NUMBERofVERTICES];
 				}
 			}
 			dealloc2Darray(vertices);
@@ -286,12 +286,8 @@ void printInput(int** vertices) {
 
 	for(int k=0; k<NUMBERofVERTICES; k++){
 		for(int j=0; j<NUMBERofVERTICES; j++){
-			if(vertices[k][j] == inf){
-				cout << setw(6) << "Inf";
-
-			}else{
-				cout << setw(6) <<  vertices[k][j];
-			}
+			if(vertices[k][j] == inf) cout << setw(6) << "Inf";
+			else cout << setw(6) <<  vertices[k][j];
 		}
 		cout << endl;
 	}
@@ -333,7 +329,7 @@ int _tmain(int argc, _TCHAR* argv[]){
 	printInput(vertices);
 
 	//launch FloydWarshall
-	//init(vertices, 0, example);
+	init(vertices, 0, example);
 	cout << endl << " FloydWarshall" << endl;
 	floydWarshall(vertices);
 	printVertices(vertices);
