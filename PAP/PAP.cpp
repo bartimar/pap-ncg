@@ -19,10 +19,20 @@ void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimu
 
 void floydWarshall(int** vertices){
 
+	double start,end;
+	start=omp_get_wtime();
 	for(int k=0; k<NUMBERofVERTICES; k++) {
-		for(int i=0; i<NUMBERofVERTICES; i++){
+	
+		
+		#pragma omp master
+		omp_set_dynamic(0);     // Explicitly disable dynamic teams
+        omp_set_num_threads(4); // Use 4 threads for all consecutive parallel regions
+		int i,j;
+
+		#pragma omp parallel for private(i,j), shared(k)
+		for(i=0; i<NUMBERofVERTICES; i++){
 			if(vertices[i][k] == inf) continue;
-				for (int j=0; j<NUMBERofVERTICES; j++){
+			for (j=0; j<NUMBERofVERTICES; j++){
 				if(vertices[k][j] == inf || i == j) continue;
 				if(vertices[i][k] + vertices[k][j] < vertices[i][j]){
 					vertices[i][j] = vertices[i][k] + vertices[k][j];
@@ -31,10 +41,14 @@ void floydWarshall(int** vertices){
 		}
 	}
 
+	
+	end=omp_get_wtime();
+
+	cout<< "Time Warshall: "<< end-start <<endl;
 }
 
 void printVertices(int** vertices) {
-
+#ifdef DEBUG
 	cout<< "    ";
 	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
 	cout<<endl;
@@ -52,7 +66,7 @@ void printVertices(int** vertices) {
 		cout<< endl;
 	}
 	cout<<endl;
-
+#endif
 }
 
 int *dijkstraDistance(int** vertices){
@@ -270,7 +284,7 @@ void initExample(int& example) {
 		NUMBERofVERTICES=13;
 		break;
 	case 0:
-		NUMBERofVERTICES=15;
+		NUMBERofVERTICES=2000;
 		break;
 	default:
 		cout<<"Bad parameter. Exit"<<endl;
@@ -281,7 +295,7 @@ void initExample(int& example) {
 
 
 void printInput(int** vertices) {
-
+#ifdef DEBUG
 	cout << "Input matrix of distances" << endl << endl;
 
 	for(int k=0; k<NUMBERofVERTICES; k++){
@@ -291,14 +305,18 @@ void printInput(int** vertices) {
 		}
 		cout << endl;
 	}
+#endif
 }
+
+#include <omp.h>
 
 int _tmain(int argc, _TCHAR* argv[]){
 	//CUDA - spoustet na 1,2,4,6,8,12,24
 	int *minimumDistance;
 	int** vertices=NULL,**toPrint=NULL;
 	int example;
-	srand((unsigned int)time(0));
+	int i;
+	srand((unsigned int)time(NULL));
 	
 	initExample(example);
 	alloc2Darray(vertices);
@@ -310,23 +328,26 @@ int _tmain(int argc, _TCHAR* argv[]){
 	printInput(vertices);
 
 	//launch Dijkstra
-	for(int i = 0; i < NUMBERofVERTICES; i++){
-		// inicialization of data
-		init(vertices, -i+NUMBERofVERTICES, example);	
-
-		minimumDistance = dijkstraDistance(vertices);
-
-		for (int j=0; j<NUMBERofVERTICES; j++){
-			toPrint[i][j]=minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES];
-		}
-		delete [] minimumDistance;
-	}
+	//#pragma omp parallel private(i)
 	
-	cout << endl << endl << " Dijkstra" << endl;
-	printVertices(toPrint);
+   //#pragma omp for schedule(dynamic,chunk) nowait
+	//for(i = 0; i < NUMBERofVERTICES; i++){
+	//	// inicialization of data
+	//	init(vertices, -i+NUMBERofVERTICES, example);	
 
-	
-	printInput(vertices);
+	//	minimumDistance = dijkstraDistance(vertices);
+
+	//	for (int j=0; j<NUMBERofVERTICES; j++){
+	//		toPrint[i][j]=minimumDistance[(j-i+NUMBERofVERTICES)%NUMBERofVERTICES];
+	//	}
+	//	delete [] minimumDistance;
+	//}
+	//
+	//cout << endl << endl << " Dijkstra" << endl;
+	//printVertices(toPrint);
+
+	//
+	//printInput(vertices);
 
 	//launch FloydWarshall
 	init(vertices, 0, example);
