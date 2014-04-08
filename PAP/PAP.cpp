@@ -1,15 +1,15 @@
-#include "stdafx.h"
-
-
 # include <cstdlib>
 # include <iostream>
 # include <iomanip>
 # include <ctime>
+#include <limits.h>
 # include <omp.h>
 
 using namespace std;
 
 int NUMBERofVERTICES;
+bool *connected;
+	
 const int inf = INT_MAX;
 int *dijkstraDistance (int** vertices);
 void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int);
@@ -67,12 +67,8 @@ void printVertices(int** vertices) {
 }
 
 int *dijkstraDistance(int** vertices,int shuf){
-	bool *connected;
 	int *minimumDistance;
 	int  distance, index;
-
-	// start out with only node shuf connected to the tree
-	connected = new bool[NUMBERofVERTICES];
 
 	for(int i=0; i<NUMBERofVERTICES; i++)
 		connected[i] = false;
@@ -95,8 +91,6 @@ int *dijkstraDistance(int** vertices,int shuf){
 			updateMinimumDistance(index, connected, vertices, minimumDistance);
 		}
 	}
-
-	delete [] connected;	// free memory
 
 	return minimumDistance;
 }
@@ -146,6 +140,9 @@ void init(int**& vertices,int shuf, int example){
 				else vertices[i][j] = inf;	// inicialization of all the other vertices to inf
 			}
 		}
+		// start out with only node shuf connected to the tree
+	connected = new bool[NUMBERofVERTICES];
+
 	}
 	switch(example){
 
@@ -323,15 +320,20 @@ void dijkstra(int** vertices, int** toPrint, int example,int num_threads) {
 
 }
 
-int _tmain(int argc, _TCHAR* argv[]){
+int main(int argc, char** argv){
 	//CUDA - spoustet na 1,2,4,6,8,12,24
 	int** vertices=NULL,**toPrint=NULL;
 	int example,num_threads;
 	int i;
 	srand((unsigned int)time(NULL));
 	
-	initExample(example);
-	initThreads(num_threads);
+	//initExample(example);
+	example=0;
+	NUMBERofVERTICES=5000;
+	//initThreads(num_threads);
+	num_threads=4;
+
+
 	alloc2Darray(vertices);
 	alloc2Darray(toPrint);
 	// inicialization of data
@@ -372,6 +374,8 @@ int _tmain(int argc, _TCHAR* argv[]){
 	
 	dealloc2Darray(vertices);
 	dealloc2Darray(toPrint);
+
+	delete [] connected;
 
 	system ("pause");
 	return 0;
