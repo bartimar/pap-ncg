@@ -2,14 +2,12 @@
 # include <iostream>
 # include <iomanip>
 # include <ctime>
-#include <limits.h>
 # include <omp.h>
+#include <limits.h>
 
 using namespace std;
 
 int NUMBERofVERTICES;
-bool *connected;
-	
 const int inf = INT_MAX;
 int *dijkstraDistance (int** vertices);
 void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int);
@@ -25,7 +23,7 @@ void floydWarshall(int** vertices,int num_threads){
 		
 		#pragma omp master
 		omp_set_dynamic(0);     // Explicitly disable dynamic teams
-        omp_set_num_threads(num_threads); // Use 4 threads for all consecutive parallel regions
+        omp_set_num_threads(num_threads); // Use x threads for all consecutive parallel regions
 		int i,j;
 
 		#pragma omp parallel for private(i,j), shared(k)
@@ -67,8 +65,12 @@ void printVertices(int** vertices) {
 }
 
 int *dijkstraDistance(int** vertices,int shuf){
+	bool *connected;
 	int *minimumDistance;
 	int  distance, index;
+
+	// start out with only node shuf connected to the tree
+	connected = new bool[NUMBERofVERTICES];
 
 	for(int i=0; i<NUMBERofVERTICES; i++)
 		connected[i] = false;
@@ -91,6 +93,8 @@ int *dijkstraDistance(int** vertices,int shuf){
 			updateMinimumDistance(index, connected, vertices, minimumDistance);
 		}
 	}
+
+	delete [] connected;	// free memory
 
 	return minimumDistance;
 }
@@ -140,9 +144,6 @@ void init(int**& vertices,int shuf, int example){
 				else vertices[i][j] = inf;	// inicialization of all the other vertices to inf
 			}
 		}
-		// start out with only node shuf connected to the tree
-	connected = new bool[NUMBERofVERTICES];
-
 	}
 	switch(example){
 
@@ -307,9 +308,9 @@ void dijkstra(int** vertices, int** toPrint, int example,int num_threads) {
 
 		minimumDistance = dijkstraDistance(vertices,i);
 
-		for (int j=0; j<NUMBERofVERTICES; j++){
-			toPrint[i][j]=minimumDistance[j];
-		}
+		//for (int j=0; j<NUMBERofVERTICES; j++){
+		//	//toPrint[i][j]=minimumDistance[j];
+		//}
 		delete [] minimumDistance;
 	}
 
@@ -327,15 +328,25 @@ int main(int argc, char** argv){
 	int i;
 	srand((unsigned int)time(NULL));
 	
-	//initExample(example);
+
+	/*if(argc<2){
+		cout<< "Error. Too few parameters.\nUSAGE: "<< argv[0] <<" numberOfVertices threads"<<endl;
+		exit(1);
+	}
 	example=0;
-	NUMBERofVERTICES=5000;
-	//initThreads(num_threads);
-	num_threads=4;
+	NUMBERofVERTICES=atoi(argv[1]);
+	num_threads=atoi(argv[2]);
 
+	cout<< "Starting computation. Number of vertices=" << NUMBERofVERTICES <<" threads=" << num_threads << endl;
+*/
 
+	initExample(example);
+	initThreads(num_threads);
+	
+	
+	
 	alloc2Darray(vertices);
-	alloc2Darray(toPrint);
+	//alloc2Darray(toPrint);
 	// inicialization of data
 	init(vertices, 0, example);	
 
@@ -357,25 +368,23 @@ int main(int argc, char** argv){
 	printVertices(vertices);
 
 	//check if the outputs were the same
-	bool same=true;
-	for (int i = 0; i < NUMBERofVERTICES; i++){
-		for (int j = 0; j < NUMBERofVERTICES; j++){
-			if(toPrint[i][j] != vertices[i][j]){ 
-				same=false;
-				//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
-				//break;
-			}
-		}
-	}
+	//bool same=true;
+	//for (int i = 0; i < NUMBERofVERTICES; i++){
+	//	for (int j = 0; j < NUMBERofVERTICES; j++){
+	//		if(toPrint[i][j] != vertices[i][j]){ 
+	//			same=false;
+	//			//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
+	//			//break;
+	//		}
+	//	}
+	//}
 
-	if(same) cout <<"NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
-	else cout << "NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
+	//if(same) cout <<"NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
+	//else cout << "NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
 
 	
 	dealloc2Darray(vertices);
-	dealloc2Darray(toPrint);
-
-	delete [] connected;
+//	dealloc2Darray(toPrint);
 
 	system ("pause");
 	return 0;
