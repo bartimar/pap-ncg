@@ -2,34 +2,36 @@
 # include <iostream>
 # include <iomanip>
 # include <ctime>
-# include <omp.h>
+//# include <omp.h>
 #include <limits.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cstdio>
 
 using namespace std;
 
 int NUMBERofVERTICES;
 const int inf = INT_MAX;
-int *dijkstraDistance (int** vertices);
-void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int);
+__device__ int *dijkstraDistance (int** vertices, int NUMBERofVERTICES);
+__device__ void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int, int NUMBERofVERTICES);
 void init (int**& vertices,int=0, int=1);
-void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance);
+__device__ void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES);
 
-void floydWarshall(int** vertices,int num_threads){
 
-	double start,end;
-	start=omp_get_wtime();
+static void HandleError( cudaError_t err, const char *file, int line ) {
+ if (err != cudaSuccess) { 
+ printf( "%s in %s at line %d\n", cudaGetErrorString( err ), file, line ); 
+ exit( EXIT_FAILURE ); 
+}} 
+ 
+#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ )) 
+
+void floydWarshall(int** vertices){
+
 	for(int k=0; k<NUMBERofVERTICES; k++) {
-	
-		
-		#pragma omp master
-		omp_set_dynamic(0);     // Explicitly disable dynamic teams
-        omp_set_num_threads(num_threads); // Use x threads for all consecutive parallel regions
-		int i,j;
-
-		#pragma omp parallel for private(i,j), shared(k)
-		for(i=0; i<NUMBERofVERTICES; i++){
+		for(int i=0; i<NUMBERofVERTICES; i++){
 			if(vertices[i][k] == inf) continue;
-			for (j=0; j<NUMBERofVERTICES; j++){
+			for (int j=0; j<NUMBERofVERTICES; j++){
 				if(vertices[k][j] == inf || i == j) continue;
 				if(vertices[i][k] + vertices[k][j] < vertices[i][j]){
 					vertices[i][j] = vertices[i][k] + vertices[k][j];
@@ -37,11 +39,6 @@ void floydWarshall(int** vertices,int num_threads){
 			}
 		}
 	}
-
-	end=omp_get_wtime();
-	
-
-	cout<< "Time Warshall: "<< end-start <<endl;
 }
 
 void printVertices(int** vertices) {
@@ -64,13 +61,15 @@ void printVertices(int** vertices) {
 #endif
 }
 
-int *dijkstraDistance(int** vertices,int shuf){
+__device__  int *dijkstraDistance(int** vertices,int shuf, int NUMBERofVERTICES){
 	bool *connected;
 	int *minimumDistance;
 	int  distance, index;
 
 	// start out with only node shuf connected to the tree
-	connected = new bool[NUMBERofVERTICES];
+	connected= (bool*) malloc(NUMBERofVERTICES * sizeof(bool) ); 
+
+
 
 	for(int i=0; i<NUMBERofVERTICES; i++)
 		connected[i] = false;
@@ -78,28 +77,27 @@ int *dijkstraDistance(int** vertices,int shuf){
 	connected[shuf] = true;
 
 	// initialize the minimum distance to the one-step distance
-	minimumDistance = new int[NUMBERofVERTICES];
+	minimumDistance= (int* )malloc(NUMBERofVERTICES * sizeof(int) ); 
 
 	for(int i=0; i<NUMBERofVERTICES; i++)
 		minimumDistance[i] = vertices[shuf][i];
 
-
 	for(int step=1; step<NUMBERofVERTICES; step++){
 		
-		findNearest(minimumDistance, connected, distance, index,shuf);
+		findNearest(minimumDistance, connected, distance, index,shuf, NUMBERofVERTICES);
 
 		if(distance < inf){
 			connected[index] = true;
-			updateMinimumDistance(index, connected, vertices, minimumDistance);
+			updateMinimumDistance(index, connected, vertices, minimumDistance,NUMBERofVERTICES);
 		}
 	}
 
-	delete [] connected;	// free memory
+	free( connected ); 
 
 	return minimumDistance;
 }
 
-void findNearest(int* minimumDistance, bool *connected, int& distance, int& index,int shuf){
+__device__ void findNearest(int* minimumDistance, bool *connected, int& distance, int& index,int shuf, int NUMBERofVERTICES){
 	// output: 
 	//	- int distance, the distance from node 0 to the nearest unconnected node in the range first to last
 	//	- int index, the index of the nearest unconnected node in the range first to last.
@@ -118,18 +116,24 @@ void findNearest(int* minimumDistance, bool *connected, int& distance, int& inde
 
 void alloc2Darray(int**& arr) {
 
-	arr=new int*[NUMBERofVERTICES];
-	
+	HANDLE_ERROR ( cudaHostAlloc( (void**)&arr, NUMBERofVERTICES* sizeof(int*), cudaHostAllocDefault )) ; 
+
 	for (int i = 0; i < NUMBERofVERTICES; i++)
-		arr[i]=new int[NUMBERofVERTICES];
+	{
+	
+	HANDLE_ERROR ( cudaHostAlloc( (void**)&arr[i], NUMBERofVERTICES * sizeof(int), cudaHostAllocDefault )) ; 
+
+	}
+
 }
 
 void dealloc2Darray(int**& arr) {
 	
 	for (int i = 0; i < NUMBERofVERTICES; i++)
-		delete arr[i];
-	
-	delete [] arr;
+		HANDLE_ERROR( cudaFreeHost( arr[i] ) ); 
+ 
+	HANDLE_ERROR( cudaFreeHost( arr ) ); 
+
 	arr=NULL;
 }
 
@@ -234,7 +238,7 @@ void init(int**& vertices,int shuf, int example){
 
 }
 
-void updateMinimumDistance(int mainIndex, bool* connected, int** vertices, int* minimumDistance){
+__device__ void updateMinimumDistance(int mainIndex, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES){
 	for(int i=0;i< NUMBERofVERTICES; i++){
 		if(connected[i] || vertices[mainIndex][i] == inf) continue;
 		if(minimumDistance[mainIndex] + vertices[mainIndex][i] < minimumDistance[i]){
@@ -274,12 +278,6 @@ void initExample(int& example) {
 
 }
 
-void initThreads(int& num_threads) {
-
-	cout<<"Enter number of threads: "<<endl;
-	cin>>num_threads;
-	
-}
 void printInput(int** vertices) {
 #ifdef DEBUG
 	cout << "Input matrix of distances" << endl << endl;
@@ -294,37 +292,29 @@ void printInput(int** vertices) {
 #endif
 }
 
-void dijkstra(int** vertices, int** toPrint, int example,int num_threads) {
+__global__  void dijkstra(int** vertices, int** toPrint, int example, int NUMBERofVERTICES) {
+	
+
+	//int i=blockIdx.x; 
+	//int j=threadIdx.x; 
+
 	int *minimumDistance,i;
-
-	double start,end;
-	start=omp_get_wtime();
-
-#pragma omp master
-	omp_set_dynamic(0);     // Explicitly disable dynamic teams
-	omp_set_num_threads(num_threads); // Use x threads for all consecutive parallel regions
-#pragma omp parallel for private(i), shared(vertices)
 	for(i = 0; i < NUMBERofVERTICES; i++){
 
-		minimumDistance = dijkstraDistance(vertices,i);
+		minimumDistance = dijkstraDistance(vertices,i,NUMBERofVERTICES);
 
 		//for (int j=0; j<NUMBERofVERTICES; j++){
 		//	//toPrint[i][j]=minimumDistance[j];
 		//}
-		delete [] minimumDistance;
+		//delete [] minimumDistance;
 	}
-
-
-	end=omp_get_wtime();	
-
-	cout<< "Time Dijkstra: "<< end-start <<endl;
-
+	
 }
 
 int main(int argc, char** argv){
 	//CUDA - spoustet na 1,2,4,6,8,12,24
 	int** vertices=NULL,**toPrint=NULL;
-	int example,num_threads;
+	int example;
 	int i;
 	srand((unsigned int)time(NULL));
 	
@@ -338,12 +328,9 @@ int main(int argc, char** argv){
 	num_threads=atoi(argv[2]);
 
 	cout<< "Starting computation. Number of vertices=" << NUMBERofVERTICES <<" threads=" << num_threads << endl;
-*/
+	*/
 
 	initExample(example);
-	initThreads(num_threads);
-	
-	
 	
 	alloc2Darray(vertices);
 	//alloc2Darray(toPrint);
@@ -353,9 +340,32 @@ int main(int argc, char** argv){
 	// print input
 	printInput(vertices);
 
+	int ** devVertices;
+	alloc2Darray(devVertices);
+
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+	{
+		cudaMemcpy(devVertices[i],vertices[i],sizeof(int)*NUMBERofVERTICES,cudaMemcpyHostToDevice); 
+	}
+
+	cudaEvent_t start, stop; 
+	float elapsedTime; 
+	cudaEventCreate( &start ) ; 
+	cudaEventCreate( &stop ) ; 
+	cudaEventRecord( start, 0 );
+
 	//launch Dijkstra
-	dijkstra(vertices,toPrint,example,num_threads);
+	dijkstra<<<1,NUMBERofVERTICES>>>(devVertices,toPrint,example, NUMBERofVERTICES);
+
+	cudaEventRecord( stop, 0 );
+	cudaEventSynchronize( stop ) ; 
+	cudaEventElapsedTime( &elapsedTime, start, stop ); 
+	cout << "GPU time taken: "<< elapsedTime <<  " ms" << endl; 
 	
+
+	cudaThreadSynchronize(); 
+
+
 	//cout << endl << endl << " Dijkstra" << endl;
 	printVertices(toPrint);
 
@@ -364,7 +374,7 @@ int main(int argc, char** argv){
 
 	//launch FloydWarshall
 	//cout << endl << " FloydWarshall" << endl;
-	floydWarshall(vertices,num_threads);
+	floydWarshall(vertices);
 	printVertices(vertices);
 
 	//check if the outputs were the same
@@ -386,6 +396,6 @@ int main(int argc, char** argv){
 	dealloc2Darray(vertices);
 //	dealloc2Darray(toPrint);
 
-	system ("pause");
+	//system ("pause");
 	return 0;
 }
