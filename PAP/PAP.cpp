@@ -1,25 +1,7 @@
-#include <cstdlib>
-#include <iostream>
-#include <iomanip>
-#include <ctime>
-#include <omp.h>
-#include <limits.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cstdio>
-#include <stdio.h>
+#include "PAP.h"
 
-using namespace std;
-
-#define BLOCK_SIZE 256
 
 int NUMBERofVERTICES;
-const int inf = INT_MAX;
-__device__ int *dijkstraDistance (int** vertices, int NUMBERofVERTICES);
-__device__ void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int, int NUMBERofVERTICES);
-void init (int**& vertices,int=0, int=1);
-__device__ void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES);
-
 
 static void HandleError( cudaError_t err, const char *file, int line ) {
  if (err != cudaSuccess) { 
@@ -30,101 +12,6 @@ static void HandleError( cudaError_t err, const char *file, int line ) {
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ )) 
 
 
-
-void floydWarshall(int** vertices,int num_threads){
-
-	double start,end;
-	//start=omp_get_wtime();
-	for(int k=0; k<NUMBERofVERTICES; k++) {
-
-
-		//#pragma omp master
-		//omp_set_dynamic(0);     // Explicitly disable dynamic teams
-		//omp_set_num_threads(num_threads); // Use x threads for all consecutive parallel regions
-		int i,j;
-
-		//#pragma omp parallel for private(i,j), shared(k)
-		for(i=0; i<NUMBERofVERTICES; i++){
-			if(vertices[i][k] == inf) continue;
-			for (j=0; j<NUMBERofVERTICES; j++){
-				if(vertices[k][j] == inf || i == j) continue;
-				if(vertices[i][k] + vertices[k][j] < vertices[i][j]){
-					vertices[i][j] = vertices[i][k] + vertices[k][j];
-				}
-			}
-		}
-	}
-
-	//end=omp_get_wtime();
-
-
-	//cout<< "Time CPU_Warshall: "<< end-start <<endl;
-}
-
-__global__ void _Wake_GPU(int reps){
-	int idx=blockIdx.x*blockDim.x + threadIdx.x;
-	if(idx>=reps) return;
-}
-
-__global__ void floydWarshall_GPU_kernel(int k, int *G,int N){
-	int col=blockIdx.x*blockDim.x + threadIdx.x;
-	if(col>=N)return;
-	int idx=N*blockIdx.y+col;
-
-	__shared__ int best;
-	if(threadIdx.x==0)
-		best=G[N*blockIdx.y+k];
-
-	__syncthreads();
-	if(best==inf)return;
-
-	int tmp_b=G[k*N+col];
-	if(tmp_b==inf)return;
-
-	int cur=best+tmp_b;
-	if(cur<G[idx]){
-		G[idx]=cur;
-	}
-}
-
-void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES){
-	int *DeviceGraph;
-	int numBytes=NUMBERofVERTICES*NUMBERofVERTICES*sizeof(int);
-
-	cudaError_t err=cudaMalloc((int **)&DeviceGraph,numBytes);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
-
-	//copy from host (CPU) to device (GPU)
-	err=cudaMemcpy(DeviceGraph,HostGraph,numBytes,cudaMemcpyHostToDevice);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
-
-	dim3 dimGrid((NUMBERofVERTICES+BLOCK_SIZE-1)/BLOCK_SIZE,NUMBERofVERTICES);
-
-	for(int k=0;k<NUMBERofVERTICES;k++){
-		floydWarshall_GPU_kernel<<<dimGrid,BLOCK_SIZE>>>(k,DeviceGraph,NUMBERofVERTICES);
-
-		err = cudaThreadSynchronize();
-		if(err!=cudaSuccess){
-			printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-		}
-	}
-
-	//copy back - from device to host
-	err=cudaMemcpy(HostGraph,DeviceGraph,numBytes,cudaMemcpyDeviceToHost);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
-
-	//free device memory
-	err=cudaFree(DeviceGraph);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
-}
 
 void printVertices(int** vertices) {
 	cout << "    ";
@@ -163,58 +50,7 @@ void printVertices_GPU(int* D_G) {
 }
 
 
-__device__  int *dijkstraDistance(int** vertices,int shuf, int NUMBERofVERTICES){
-	bool *connected;
-	int *minimumDistance;
-	int  distance, index;
 
-	// start out with only node shuf connected to the tree
-	connected= (bool*) malloc(NUMBERofVERTICES * sizeof(bool) ); 
-
-
-
-	for(int i=0; i<NUMBERofVERTICES; i++)
-		connected[i] = false;
-
-	connected[shuf] = true;
-
-	// initialize the minimum distance to the one-step distance
-	minimumDistance= (int* )malloc(NUMBERofVERTICES * sizeof(int) ); 
-
-	for(int i=0; i<NUMBERofVERTICES; i++)
-		minimumDistance[i] = vertices[shuf][i];
-
-	for(int step=1; step<NUMBERofVERTICES; step++){
-		
-		findNearest(minimumDistance, connected, distance, index,shuf, NUMBERofVERTICES);
-
-		if(distance < inf){
-			connected[index] = true;
-			updateMinimumDistance(index, connected, vertices, minimumDistance,NUMBERofVERTICES);
-		}
-	}
-
-	free( connected ); 
-
-	return minimumDistance;
-}
-
-__device__ void findNearest(int* minimumDistance, bool *connected, int& distance, int& index,int shuf, int NUMBERofVERTICES){
-	// output: 
-	//	- int distance, the distance from node 0 to the nearest unconnected node in the range first to last
-	//	- int index, the index of the nearest unconnected node in the range first to last.
-
-	distance = inf;
-	index = -1;
-
-	for(int i=0; i<NUMBERofVERTICES; i++){
-		if(i==shuf) continue;
-		if(!connected[i] && minimumDistance[i] < distance){
-			distance = minimumDistance[i];
-			index = i;
-		}
-	}
-}
 
 
 void alloc2Darray(int**& arr, int*& arr_GPU) {
@@ -353,14 +189,6 @@ void init(int**& vertices,int shuf, int example, int*& D_G){
 
 }
 
-__device__ void updateMinimumDistance(int mainIndex, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES){
-	for(int i=0;i< NUMBERofVERTICES; i++){
-		if(connected[i] || vertices[mainIndex][i] == inf) continue;
-		if(minimumDistance[mainIndex] + vertices[mainIndex][i] < minimumDistance[i]){
-					minimumDistance[i] = minimumDistance[mainIndex] + vertices[mainIndex][i];
-		}
-	}
-}
 void initExample(int& example) {
 
 	cout<<"Enter example: 1, 2, 3 or 0 (for random)"<<endl;
@@ -421,24 +249,7 @@ void printInput_GPU(int* D_G) {
 		cout << endl;
 	}
 }
-__global__  void dijkstra(int** vertices, int** toPrint, int example, int NUMBERofVERTICES) {
-	
 
-	//int i=blockIdx.x; 
-	//int j=threadIdx.x; 
-
-	int *minimumDistance,i;
-	for(i = 0; i < NUMBERofVERTICES; i++){
-
-		minimumDistance = dijkstraDistance(vertices,i,NUMBERofVERTICES);
-
-		//for (int j=0; j<NUMBERofVERTICES; j++){
-		//	//toPrint[i][j]=minimumDistance[j];
-		//}
-		//delete [] minimumDistance;
-	}
-	
-}
 
 int main(int argc, char** argv){
 	//CUDA - spoustet na 1,2,4,6,8,12,24
