@@ -1,14 +1,17 @@
-# include <cstdlib>
-# include <iostream>
-# include <iomanip>
-# include <ctime>
-//# include <omp.h>
+#include <cstdlib>
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+#include <omp.h>
 #include <limits.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cstdio>
+#include <stdio.h>
 
 using namespace std;
+
+#define BLOCK_SIZE 256
 
 int NUMBERofVERTICES;
 const int inf = INT_MAX;
@@ -26,12 +29,24 @@ static void HandleError( cudaError_t err, const char *file, int line ) {
  
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ )) 
 
-void floydWarshall(int** vertices){
 
+
+void floydWarshall(int** vertices,int num_threads){
+
+	double start,end;
+	//start=omp_get_wtime();
 	for(int k=0; k<NUMBERofVERTICES; k++) {
-		for(int i=0; i<NUMBERofVERTICES; i++){
+
+
+		//#pragma omp master
+		//omp_set_dynamic(0);     // Explicitly disable dynamic teams
+		//omp_set_num_threads(num_threads); // Use x threads for all consecutive parallel regions
+		int i,j;
+
+		//#pragma omp parallel for private(i,j), shared(k)
+		for(i=0; i<NUMBERofVERTICES; i++){
 			if(vertices[i][k] == inf) continue;
-			for (int j=0; j<NUMBERofVERTICES; j++){
+			for (j=0; j<NUMBERofVERTICES; j++){
 				if(vertices[k][j] == inf || i == j) continue;
 				if(vertices[i][k] + vertices[k][j] < vertices[i][j]){
 					vertices[i][j] = vertices[i][k] + vertices[k][j];
@@ -39,11 +54,80 @@ void floydWarshall(int** vertices){
 			}
 		}
 	}
+
+	//end=omp_get_wtime();
+
+
+	//cout<< "Time CPU_Warshall: "<< end-start <<endl;
+}
+
+__global__ void _Wake_GPU(int reps){
+	int idx=blockIdx.x*blockDim.x + threadIdx.x;
+	if(idx>=reps) return;
+}
+
+__global__ void floydWarshall_GPU_kernel(int k, int *G,int N){
+	int col=blockIdx.x*blockDim.x + threadIdx.x;
+	if(col>=N)return;
+	int idx=N*blockIdx.y+col;
+
+	__shared__ int best;
+	if(threadIdx.x==0)
+		best=G[N*blockIdx.y+k];
+
+	__syncthreads();
+	if(best==inf)return;
+
+	int tmp_b=G[k*N+col];
+	if(tmp_b==inf)return;
+
+	int cur=best+tmp_b;
+	if(cur<G[idx]){
+		G[idx]=cur;
+	}
+}
+
+void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES){
+	int *DeviceGraph;
+	int numBytes=NUMBERofVERTICES*NUMBERofVERTICES*sizeof(int);
+
+	cudaError_t err=cudaMalloc((int **)&DeviceGraph,numBytes);
+	if(err!=cudaSuccess){
+		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
+	}
+
+	//copy from host (CPU) to device (GPU)
+	err=cudaMemcpy(DeviceGraph,HostGraph,numBytes,cudaMemcpyHostToDevice);
+	if(err!=cudaSuccess){
+		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
+	}
+
+	dim3 dimGrid((NUMBERofVERTICES+BLOCK_SIZE-1)/BLOCK_SIZE,NUMBERofVERTICES);
+
+	for(int k=0;k<NUMBERofVERTICES;k++){
+		floydWarshall_GPU_kernel<<<dimGrid,BLOCK_SIZE>>>(k,DeviceGraph,NUMBERofVERTICES);
+
+		err = cudaThreadSynchronize();
+		if(err!=cudaSuccess){
+			printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
+		}
+	}
+
+	//copy back - from device to host
+	err=cudaMemcpy(HostGraph,DeviceGraph,numBytes,cudaMemcpyDeviceToHost);
+	if(err!=cudaSuccess){
+		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
+	}
+
+	//free device memory
+	err=cudaFree(DeviceGraph);
+	if(err!=cudaSuccess){
+		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
+	}
 }
 
 void printVertices(int** vertices) {
-#ifdef DEBUG
-	cout<< "    ";
+	cout << "    ";
 	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
 	cout<<endl;
 
@@ -58,8 +142,26 @@ void printVertices(int** vertices) {
 		cout<< endl;
 	}
 	cout<<endl;
-#endif
 }
+
+void printVertices_GPU(int* D_G) {
+	cout << "    ";
+	for(int i=0; i < NUMBERofVERTICES; i++)	cout << setw(4) << char ('A' + i); 
+	cout<<endl;
+
+	for(int i=0; i < NUMBERofVERTICES; i++){
+		cout << setw(4) << char ('A' + i);
+
+		for(int j=0; j < NUMBERofVERTICES; j++){
+			if(D_G[i*NUMBERofVERTICES+j] == inf) cout << setw(4) << "Inf";
+			else cout << setw(4) << D_G[i*NUMBERofVERTICES+j];
+
+		}
+		cout<< endl;
+	}
+	cout<<endl;
+}
+
 
 __device__  int *dijkstraDistance(int** vertices,int shuf, int NUMBERofVERTICES){
 	bool *connected;
@@ -114,39 +216,43 @@ __device__ void findNearest(int* minimumDistance, bool *connected, int& distance
 	}
 }
 
-void alloc2Darray(int**& arr) {
 
-	HANDLE_ERROR ( cudaHostAlloc( (void**)&arr, NUMBERofVERTICES* sizeof(int*), cudaHostAllocDefault )) ; 
+void alloc2Darray(int**& arr, int*& arr_GPU) {
+
+	arr=new int*[NUMBERofVERTICES];
+	arr_GPU=new int[NUMBERofVERTICES*NUMBERofVERTICES];
 
 	for (int i = 0; i < NUMBERofVERTICES; i++)
-	{
-	
-	HANDLE_ERROR ( cudaHostAlloc( (void**)&arr[i], NUMBERofVERTICES * sizeof(int), cudaHostAllocDefault )) ; 
-
-	}
-
+		arr[i]=new int[NUMBERofVERTICES];
 }
 
-void dealloc2Darray(int**& arr) {
-	
-	for (int i = 0; i < NUMBERofVERTICES; i++)
-		HANDLE_ERROR( cudaFreeHost( arr[i] ) ); 
- 
-	HANDLE_ERROR( cudaFreeHost( arr ) ); 
+void dealloc2Darray(int**& arr, int*& arr_GPU) {
 
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+		delete arr[i];
+
+	delete [] arr;
+	delete [] arr_GPU;
 	arr=NULL;
+	arr_GPU=NULL;
 }
 
-void init(int**& vertices,int shuf, int example){
-	
+void init(int**& vertices,int shuf, int example, int*& D_G){
+
 	static bool initialized = false;
 
 	if(!initialized) {
 		for(int i=0; i<NUMBERofVERTICES; i++){
 			for(int j=0; j<NUMBERofVERTICES; j++){
-				if(i==j) vertices[i][i] = 0;
-				else vertices[i][j] = inf;	// inicialization of all the other vertices to inf
+				if(i==j){
+					vertices[i][i] = 0;
+					D_G[i*NUMBERofVERTICES+j] = 0;
+				}else{	// inicialization of all the other vertices to inf
+					vertices[i][j] = inf;
+					D_G[i*NUMBERofVERTICES+j] = inf;
+				}	
 			}
+
 		}
 	}
 	switch(example){
@@ -160,6 +266,15 @@ void init(int**& vertices,int shuf, int example){
 		vertices[(2+shuf)%NUMBERofVERTICES][(3+shuf)%NUMBERofVERTICES] = vertices[(3+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 100;
 		vertices[(1+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = vertices[(5+shuf)%NUMBERofVERTICES][(1+shuf)%NUMBERofVERTICES] = 6;
 		vertices[(4+shuf)%NUMBERofVERTICES][(5+shuf)%NUMBERofVERTICES] = vertices[(5+shuf)%NUMBERofVERTICES][(4+shuf)%NUMBERofVERTICES] = 8;
+
+		D_G[1]= D_G[NUMBERofVERTICES] = 40;
+		D_G[2] = D_G[2*NUMBERofVERTICES] = 15;
+		D_G[NUMBERofVERTICES+2] = D_G[2*NUMBERofVERTICES+1] = 20;
+		D_G[NUMBERofVERTICES+3] = D_G[3*NUMBERofVERTICES+1] = 10;
+		D_G[NUMBERofVERTICES+4] = D_G[4*NUMBERofVERTICES+1] = 25;
+		D_G[2*NUMBERofVERTICES+3] = D_G[3*NUMBERofVERTICES+2] = 100;
+		D_G[NUMBERofVERTICES+5] = D_G[5*NUMBERofVERTICES+1] = 6;
+		D_G[4*NUMBERofVERTICES+5] = D_G[5*NUMBERofVERTICES+4] = 8;
 		break;
 	case 2:
 		vertices[(0+shuf)%NUMBERofVERTICES][(2+shuf)%NUMBERofVERTICES] = 8;
@@ -246,7 +361,6 @@ __device__ void updateMinimumDistance(int mainIndex, bool* connected, int** vert
 		}
 	}
 }
-
 void initExample(int& example) {
 
 	cout<<"Enter example: 1, 2, 3 or 0 (for random)"<<endl;
@@ -270,7 +384,7 @@ void initExample(int& example) {
 			cout<< "Number of vertices must be > 0"<< endl;
 			exit(1);
 		}
-			break;
+		break;
 	default:
 		cout<<"Bad parameter. Exit"<<endl;
 		exit(1);
@@ -278,9 +392,14 @@ void initExample(int& example) {
 
 }
 
+void initThreads(int& num_threads) {
+
+	//cout<<"Enter number of threads: "<<endl;
+	//cin>>num_threads;
+	num_threads = 1;
+}
 void printInput(int** vertices) {
-#ifdef DEBUG
-	cout << "Input matrix of distances" << endl << endl;
+	cout  << endl << "Input matrix of distances" << endl;
 
 	for(int k=0; k<NUMBERofVERTICES; k++){
 		for(int j=0; j<NUMBERofVERTICES; j++){
@@ -289,9 +408,19 @@ void printInput(int** vertices) {
 		}
 		cout << endl;
 	}
-#endif
 }
 
+void printInput_GPU(int* D_G) {
+	cout  << endl << "Input matrix GPU of distances" << endl;
+
+	for(int k=0; k<NUMBERofVERTICES; k++){
+		for(int j=0; j<NUMBERofVERTICES; j++){
+			if(D_G[k*NUMBERofVERTICES+j] == inf) cout << setw(6) << "Inf";
+			else cout << setw(6) <<  D_G[k*NUMBERofVERTICES+j];
+		}
+		cout << endl;
+	}
+}
 __global__  void dijkstra(int** vertices, int** toPrint, int example, int NUMBERofVERTICES) {
 	
 
@@ -313,15 +442,15 @@ __global__  void dijkstra(int** vertices, int** toPrint, int example, int NUMBER
 
 int main(int argc, char** argv){
 	//CUDA - spoustet na 1,2,4,6,8,12,24
-	int** vertices=NULL,**toPrint=NULL;
-	int example;
+	int **vertices=NULL,**toPrint=NULL;
+	int example,num_threads;
 	int i;
 	srand((unsigned int)time(NULL));
-	
+	int *D_G=NULL;
 
 	/*if(argc<2){
-		cout<< "Error. Too few parameters.\nUSAGE: "<< argv[0] <<" numberOfVertices threads"<<endl;
-		exit(1);
+	cout<< "Error. Too few parameters.\nUSAGE: "<< argv[0] <<" numberOfVertices threads"<<endl;
+	exit(1);
 	}
 	example=0;
 	NUMBERofVERTICES=atoi(argv[1]);
@@ -331,11 +460,12 @@ int main(int argc, char** argv){
 	*/
 
 	initExample(example);
-	
-	alloc2Darray(vertices);
+	initThreads(num_threads);
+
+	alloc2Darray(vertices, D_G);
 	//alloc2Darray(toPrint);
 	// inicialization of data
-	init(vertices, 0, example);	
+	init(vertices, 0, example, D_G);	
 
 	// print input
 	printInput(vertices);
@@ -367,35 +497,56 @@ int main(int argc, char** argv){
 
 
 	//cout << endl << endl << " Dijkstra" << endl;
-	printVertices(toPrint);
+	//printVertices(toPrint);
 
-	
 	printInput(vertices);
+	printInput_GPU(D_G);
+
+	bool same=true;
+	for (int i = 0; i < NUMBERofVERTICES; i++){
+		for (int j = 0; j < NUMBERofVERTICES; j++){
+			if(vertices[i][j] != D_G[i*NUMBERofVERTICES+j]){ 
+				same=false;
+				//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
+				//break;
+			}
+		}
+	}
+
+	if(same) cout << endl << "Inputs are the same." << endl << endl;
+	else cout << endl << "Inputs are not the same." << endl << endl;
 
 	//launch FloydWarshall
-	//cout << endl << " FloydWarshall" << endl;
-	floydWarshall(vertices);
+	cout << " FloydWarshall_CPU" << endl;
+	floydWarshall(vertices,num_threads);
 	printVertices(vertices);
 
+	cout << " FloydWarshall_GPU" << endl;
+	_Wake_GPU<<<1,BLOCK_SIZE>>>(32);
+	floydWarshall_GPU(D_G,NUMBERofVERTICES);
+	printVertices_GPU(D_G);
 	//check if the outputs were the same
-	//bool same=true;
-	//for (int i = 0; i < NUMBERofVERTICES; i++){
-	//	for (int j = 0; j < NUMBERofVERTICES; j++){
-	//		if(toPrint[i][j] != vertices[i][j]){ 
-	//			same=false;
-	//			//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
-	//			//break;
-	//		}
-	//	}
-	//}
+	same=true;
+	for (int i = 0; i < NUMBERofVERTICES; i++){
+		for (int j = 0; j < NUMBERofVERTICES; j++){
+			if(vertices[i][j] != D_G[i*NUMBERofVERTICES+j]){ 
+				same=false;
+				//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
+				//break;
+			}
+		}
+	}
+
+	if(same) cout << "Results are the same." <<endl;
+	else cout << "Results are not the same." <<endl;
 
 	//if(same) cout <<"NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
 	//else cout << "NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
 
-	
-	dealloc2Darray(vertices);
-//	dealloc2Darray(toPrint);
 
-	//system ("pause");
+	dealloc2Darray(vertices, D_G);
+	//	dealloc2Darray(toPrint);
+
+	system ("pause");
 	return 0;
 }
