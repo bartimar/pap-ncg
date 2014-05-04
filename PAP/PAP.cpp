@@ -468,34 +468,9 @@ int main(int argc, char** argv){
 	init(vertices, 0, example, D_G);	
 
 	// print input
-	printInput(vertices);
+	//printInput(vertices);
 
-	int ** devVertices;
-	alloc2Darray(devVertices);
-
-	for (int i = 0; i < NUMBERofVERTICES; i++)
-	{
-		cudaMemcpy(devVertices[i],vertices[i],sizeof(int)*NUMBERofVERTICES,cudaMemcpyHostToDevice); 
-	}
-
-	cudaEvent_t start, stop; 
-	float elapsedTime; 
-	cudaEventCreate( &start ) ; 
-	cudaEventCreate( &stop ) ; 
-	cudaEventRecord( start, 0 );
-
-	//launch Dijkstra
-	dijkstra<<<1,NUMBERofVERTICES>>>(devVertices,toPrint,example, NUMBERofVERTICES);
-
-	cudaEventRecord( stop, 0 );
-	cudaEventSynchronize( stop ) ; 
-	cudaEventElapsedTime( &elapsedTime, start, stop ); 
-	cout << "GPU time taken: "<< elapsedTime <<  " ms" << endl; 
 	
-
-	cudaThreadSynchronize(); 
-
-
 	//cout << endl << endl << " Dijkstra" << endl;
 	//printVertices(toPrint);
 
@@ -540,6 +515,36 @@ int main(int argc, char** argv){
 	if(same) cout << "Results are the same." <<endl;
 	else cout << "Results are not the same." <<endl;
 
+
+	int ** devVertices;
+	alloc2Darray(devVertices,D_G);
+
+	for (int i = 0; i < NUMBERofVERTICES; i++)
+	{
+		cudaMemcpy(devVertices[i],vertices[i],sizeof(int)*NUMBERofVERTICES,cudaMemcpyHostToDevice); 
+	}
+
+	cudaEvent_t start, stop; 
+	float elapsedTime; 
+	cudaEventCreate( &start ) ; 
+	cudaEventCreate( &stop ) ; 
+	cudaEventRecord( start, 0 );
+
+	//launch Dijkstra
+	dijkstra<<<1,NUMBERofVERTICES>>>(devVertices,toPrint,example, NUMBERofVERTICES);
+
+	cudaEventRecord( stop, 0 );
+	cudaEventSynchronize( stop ) ; 
+	cudaEventElapsedTime( &elapsedTime, start, stop ); 
+	cout << "GPU time taken: "<< elapsedTime <<  " ms" << endl; 
+	
+
+	cudaThreadSynchronize(); 
+
+
+
+
+
 	//if(same) cout <<"NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are the same. OK!" << endl << endl;
 	//else cout << "NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
 
@@ -547,6 +552,6 @@ int main(int argc, char** argv){
 	dealloc2Darray(vertices, D_G);
 	//	dealloc2Darray(toPrint);
 
-	system ("pause");
+	//system ("pause");
 	return 0;
 }
