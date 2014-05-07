@@ -2,36 +2,31 @@
 
 extern int NUMBERofVERTICES;
 
-__global__ void _Wake_GPU(int reps){
-	int idx=blockIdx.x*blockDim.x + threadIdx.x;
-	if(idx>=reps) return;
-}
-
-__global__ void floydWarshall_GPU_kernel(int k, int *G,int N){
+__global__ void floydWarshall_GPU_kernel(int k, int *Graph,int NUMBERofVERTICES){
 	int col=blockIdx.x*blockDim.x + threadIdx.x;
-	if(col>=N)return;
-	int idx=N*blockIdx.y+col;
+	if(col>=NUMBERofVERTICES)return;
+	int idx=NUMBERofVERTICES*blockIdx.y+col;
 
 	__shared__ int best;
 	if(threadIdx.x==0)
-		best=G[N*blockIdx.y+k];
+		best=Graph[NUMBERofVERTICES*blockIdx.y+k];
 
 	__syncthreads();
 	if(best==inf)return;
 
-	int tmp_b=G[k*N+col];
+	int tmp_b=Graph[k*NUMBERofVERTICES+col];
 	if(tmp_b==inf)return;
 
 	int cur=best+tmp_b;
-	if(cur<G[idx]){
-		G[idx]=cur;
+	if(cur<Graph[idx]){
+		Graph[idx]=cur;
 	}
 }
 
 
 void floydWarshall(int** vertices,int num_threads){
 
-	double start,end;
+	//double start,end;
 	//start=omp_get_wtime();
 	for(int k=0; k<NUMBERofVERTICES; k++) {
 
@@ -58,8 +53,6 @@ void floydWarshall(int** vertices,int num_threads){
 
 	//cout<< "Time CPU_Warshall: "<< end-start <<endl;
 }
-
-
 
 void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES){
 	int *DeviceGraph;

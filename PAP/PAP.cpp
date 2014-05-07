@@ -49,28 +49,21 @@ void printVertices_GPU(int* D_G) {
 	cout<<endl;
 }
 
-
-
-
-
-void alloc2Darray(int**& arr, int*& arr_GPU) {
+void alloc2Darray(int**& arr) {
 
 	arr=new int*[NUMBERofVERTICES];
-	arr_GPU=new int[NUMBERofVERTICES*NUMBERofVERTICES];
 
 	for (int i = 0; i < NUMBERofVERTICES; i++)
 		arr[i]=new int[NUMBERofVERTICES];
 }
 
-void dealloc2Darray(int**& arr, int*& arr_GPU) {
+void dealloc2Darray(int**& arr) {
 
 	for (int i = 0; i < NUMBERofVERTICES; i++)
 		delete arr[i];
 
 	delete [] arr;
-	delete [] arr_GPU;
 	arr=NULL;
-	arr_GPU=NULL;
 }
 
 void init(int**& vertices,int shuf, int example, int*& D_G){
@@ -180,8 +173,10 @@ void init(int**& vertices,int shuf, int example, int*& D_G){
 		int val;
 		if(initialized) break;
 		for (int i = 0; i < NUMBERofVERTICES; i++)
-			for (int j = 0; j < NUMBERofVERTICES; j++)
-				vertices[i][j]= (val=rand()%150) ? val : inf ;
+			for (int j = 0; j < NUMBERofVERTICES; j++){
+				if(i==j) continue;
+				D_G[i*NUMBERofVERTICES+j]=vertices[i][j]= (val=rand()%150) ? val : inf ;
+			}
 
 		initialized=true;
 	}
@@ -255,9 +250,8 @@ int main(int argc, char** argv){
 	//CUDA - spoustet na 1,2,4,6,8,12,24
 	int **vertices=NULL,**toPrint=NULL;
 	int example,num_threads;
-	int i;
 	srand((unsigned int)time(NULL));
-	int *D_G=NULL;
+	int *H_G;
 
 	/*if(argc<2){
 	cout<< "Error. Too few parameters.\nUSAGE: "<< argv[0] <<" numberOfVertices threads"<<endl;
@@ -273,10 +267,14 @@ int main(int argc, char** argv){
 	initExample(example);
 	initThreads(num_threads);
 
-	alloc2Darray(vertices, D_G);
+	alloc2Darray(vertices);
+	cudaError_t err=cudaHostAlloc((int**)&H_G, NUMBERofVERTICES*NUMBERofVERTICES*sizeof(int),cudaHostAllocDefault);
+	if(err!=cudaSuccess){
+		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
+	}
 	//alloc2Darray(toPrint);
 	// inicialization of data
-	init(vertices, 0, example, D_G);	
+	init(vertices, 0, example, H_G);	
 
 	// print input
 	//printInput(vertices);
@@ -285,72 +283,84 @@ int main(int argc, char** argv){
 	//cout << endl << endl << " Dijkstra" << endl;
 	//printVertices(toPrint);
 
-	printInput(vertices);
-	printInput_GPU(D_G);
+	////printInput(vertices);
+	////printInput_GPU(H_G);
 
-	bool same=true;
-	for (int i = 0; i < NUMBERofVERTICES; i++){
-		for (int j = 0; j < NUMBERofVERTICES; j++){
-			if(vertices[i][j] != D_G[i*NUMBERofVERTICES+j]){ 
-				same=false;
-				//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
-				//break;
-			}
-		}
-	}
+	//cout << "Comparing inputs..." << endl;
+	//bool same=true;
+	//for (int i = 0; i < NUMBERofVERTICES; i++){
+	//	for (int j = 0; j < NUMBERofVERTICES; j++){
+	//		if(vertices[i][j] != H_G[i*NUMBERofVERTICES+j]){ 
+	//			same=false;
+	//			cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
+	//			//break;
+	//		}
+	//	}
+	//}
 
-	if(same) cout << endl << "Inputs are the same." << endl << endl;
-	else cout << endl << "Inputs are not the same." << endl << endl;
-
+	//if(same) cout << "Inputs are the same." << endl;
+	//else cout << "Inputs are not the same." << endl;
+	//cout << endl;
 	//launch FloydWarshall
-	cout << " FloydWarshall_CPU" << endl;
-	floydWarshall(vertices,num_threads);
-	printVertices(vertices);
+	//cout << "   FloydWarshall_CPU" << endl;
+	//floydWarshall(vertices,num_threads);
+	////printVertices(vertices);
 
-	cout << " FloydWarshall_GPU" << endl;
-	_Wake_GPU<<<1,BLOCK_SIZE>>>(32);
-	floydWarshall_GPU(D_G,NUMBERofVERTICES);
-	printVertices_GPU(D_G);
-	//check if the outputs were the same
-	same=true;
-	for (int i = 0; i < NUMBERofVERTICES; i++){
-		for (int j = 0; j < NUMBERofVERTICES; j++){
-			if(vertices[i][j] != D_G[i*NUMBERofVERTICES+j]){ 
-				same=false;
-				//cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
-				//break;
-			}
-		}
-	}
-
-	if(same) cout << "Results are the same." <<endl;
-	else cout << "Results are not the same." <<endl;
-
-
-	int ** devVertices;
-	alloc2Darray(devVertices,D_G);
-
-	for (int i = 0; i < NUMBERofVERTICES; i++)
-	{
-		cudaMemcpy(devVertices[i],vertices[i],sizeof(int)*NUMBERofVERTICES,cudaMemcpyHostToDevice); 
-	}
-
+	cout << "   FloydWarshall_GPU" << endl;
 	cudaEvent_t start, stop; 
 	float elapsedTime; 
 	cudaEventCreate( &start ) ; 
 	cudaEventCreate( &stop ) ; 
 	cudaEventRecord( start, 0 );
 
-	//launch Dijkstra
-	dijkstra<<<1,NUMBERofVERTICES>>>(devVertices,toPrint,example, NUMBERofVERTICES);
+	floydWarshall_GPU(H_G, NUMBERofVERTICES);
 
 	cudaEventRecord( stop, 0 );
 	cudaEventSynchronize( stop ) ; 
 	cudaEventElapsedTime( &elapsedTime, start, stop ); 
-	cout << "GPU time taken: "<< elapsedTime <<  " ms" << endl; 
+
+	////printVertices_GPU(H_G);
+	//check if the outputs were the same
+	//cout << endl << "Comparing results..." << endl;
+	//same=true;
+	//for (int i = 0; i < NUMBERofVERTICES; i++){
+	//	for (int j = 0; j < NUMBERofVERTICES; j++){
+	//		if(vertices[i][j] != H_G[i*NUMBERofVERTICES+j]){ 
+	//			same=false;
+	//			cout<< "Error at vertices["<< i<<"]["<< j<<"]" <<endl;
+	//			//break;
+	//		}
+	//	}
+	//}
+
+	//if(same) cout << "Results are the same." << endl;
+	//else cout << "Results are not the same." << endl;
+	cout << endl << "GPU time taken: "<< elapsedTime <<  " ms" << endl; 
+
+	//////int ** devVertices;
+	//////alloc2Darray(devVertices);
+
+	//////for (int i = 0; i < NUMBERofVERTICES; i++)
+	//////{
+	//////	cudaMemcpy(devVertices[i],vertices[i],sizeof(int)*NUMBERofVERTICES,cudaMemcpyHostToDevice); 
+	//////}
+
+	//////cudaEvent_t start, stop; 
+	//////float elapsedTime; 
+	//////cudaEventCreate( &start ) ; 
+	//////cudaEventCreate( &stop ) ; 
+	//////cudaEventRecord( start, 0 );
+
+	////////launch Dijkstra
+	//////dijkstra<<<1,NUMBERofVERTICES>>>(devVertices,toPrint,example, NUMBERofVERTICES);
+
+	//////cudaEventRecord( stop, 0 );
+	//////cudaEventSynchronize( stop ) ; 
+	//////cudaEventElapsedTime( &elapsedTime, start, stop ); 
+	//////cout << "GPU time taken: "<< elapsedTime <<  " ms" << endl; 
 	
 
-	cudaThreadSynchronize(); 
+	////////cudaThreadSynchronize(); 
 
 
 
@@ -360,7 +370,8 @@ int main(int argc, char** argv){
 	//else cout << "NoV="<< NUMBERofVERTICES<<": Dijkstra and FloydWarshall outputs are not the same. ERROR!" << endl << endl;
 
 
-	dealloc2Darray(vertices, D_G);
+	dealloc2Darray(vertices);
+	cudaFreeHost(H_G);
 	//	dealloc2Darray(toPrint);
 
 	//system ("pause");

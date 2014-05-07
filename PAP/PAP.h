@@ -21,14 +21,11 @@ using namespace std;
 __device__ int *dijkstraDistance (int** vertices, int shuf, int NUMBERofVERTICES);
 __device__ void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int, int NUMBERofVERTICES);
 __device__ void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES);
-__global__  void dijkstra(int** vertices, int** toPrint, int example, int NUMBERofVERTICES);
+__global__ void dijkstra(int** vertices, int** toPrint, int example, int NUMBERofVERTICES);
 
 void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES);
 void floydWarshall(int** vertices,int num_threads);
-__global__ void floydWarshall_GPU_kernel(int k, int *G,int N);
-__global__ void _Wake_GPU(int reps);
-
-
+__global__ void floydWarshall_GPU_kernel(int k, int *Graph,int NUMBERofVERTICES);
 
 
 void init (int**& vertices,int=0, int=1);
