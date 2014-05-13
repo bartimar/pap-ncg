@@ -3,6 +3,8 @@
 __global__  void dijkstra_GPU(int* vertices, int tid, int NUMBERofVERTICES, int* minimumDistance) {
 
 	tid= threadIdx.x;
+	
+	printf("tid is %d\n",tid);
 	dijkstraDistance_GPU(vertices,tid,NUMBERofVERTICES,&minimumDistance[ threadIdx.x*NUMBERofVERTICES]);	
 
 }

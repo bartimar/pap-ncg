@@ -285,7 +285,7 @@ int main(int argc, char** argv){
 	cudaEventElapsedTime( &elapsedTime2, start2, stop2 ); 
 	cout << "CPU time taken: "<< elapsedTime2 <<  " ms" << endl; 
 	
-	printVertices(toPrint);
+	//printVertices(toPrint);
 	for (int i = 0; i < NUMBERofVERTICES*NUMBERofVERTICES; i++)
 	{
 		minimumDistance[i]=H_G[i];
@@ -312,7 +312,7 @@ int main(int argc, char** argv){
 	cudaEventElapsedTime( &elapsedTime2, start2, stop2 ); 
 	cout << "GPU time taken: "<< elapsedTime2 <<  " ms" << endl; 
 	
-	printVertices_GPU(minimumDistance);
+	//printVertices_GPU(minimumDistance);
 	int failI,failJ;
 	cout << endl << "Comparing results..." << endl;
 	bool same=true;
