@@ -57,18 +57,13 @@ void floydWarshall(int** vertices,int num_threads){
 void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES){
 	int *DeviceGraph;
 	int numBytes=NUMBERofVERTICES*NUMBERofVERTICES*sizeof(int);
+	cudaError_t err;
 
-	cudaError_t err=cudaMalloc((int **)&DeviceGraph,numBytes);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
-
+	HANDLE_ERROR ( cudaMalloc((int **)&DeviceGraph,numBytes));
+	
 	//copy from host (CPU) to device (GPU)
-	err=cudaMemcpy(DeviceGraph,HostGraph,numBytes,cudaMemcpyHostToDevice);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
-
+	HANDLE_ERROR (cudaMemcpy(DeviceGraph,HostGraph,numBytes,cudaMemcpyHostToDevice));
+	
 	dim3 dimGrid((NUMBERofVERTICES+BLOCK_SIZE-1)/BLOCK_SIZE,NUMBERofVERTICES);
 
 	for(int k=0;k<NUMBERofVERTICES;k++){
@@ -81,14 +76,10 @@ void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES){
 	}
 
 	//copy back - from device to host
-	err=cudaMemcpy(HostGraph,DeviceGraph,numBytes,cudaMemcpyDeviceToHost);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
+	HANDLE_ERROR ( cudaMemcpy(HostGraph,DeviceGraph,numBytes,cudaMemcpyDeviceToHost));
+	
 
 	//free device memory
-	err=cudaFree(DeviceGraph);
-	if(err!=cudaSuccess){
-		printf("%s in %s at line %d\n",cudaGetErrorString(err),__FILE__,__LINE__);
-	}
+	HANDLE_ERROR (cudaFree(DeviceGraph));
+	
 }

@@ -15,13 +15,25 @@ using namespace std;
 
 #define BLOCK_SIZE 256
 
+static void HandleError( cudaError_t err, const char *file, int line ) {
+ if (err != cudaSuccess) { 
+ printf( "%s in %s at line %d\n", cudaGetErrorString( err ), file, line ); 
+ exit( EXIT_FAILURE ); 
+}} 
+ 
+#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ )) 
 
 #define inf INT_MAX
 
-__device__ int *dijkstraDistance (int** vertices, int shuf, int NUMBERofVERTICES);
-__device__ void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int, int NUMBERofVERTICES);
-__device__ void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES);
-__global__ void dijkstra(int** vertices, int** toPrint, int example, int NUMBERofVERTICES);
+__device__ int *dijkstraDistance_GPU (int* vertices, int shuf, int NUMBERofVERTICES,int*);
+__device__ void findNearest_GPU (int* minimumDistance, bool* connected, int& d, int& v,int, int NUMBERofVERTICES);
+__device__ void updateMinimumDistance_GPU (int mv, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES);
+__global__ void dijkstra_GPU(int* vertices, int blockId, int NUMBERofVERTICES,int*);
+
+int *dijkstraDistance (int** vertices, int shuf,int NUMBERofVERTICES);
+void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int,int NUMBERofVERTICES);
+void updateMinimumDistance (int mv, bool* connected, int** vertices, int* minimumDistance,int NUMBERofVERTICES);
+void dijkstra(int** vertices, int** toPrint,int NUMBERofVERTICES);
 
 void floydWarshall_GPU(int *HostGraph, const int NUMBERofVERTICES);
 void floydWarshall(int** vertices,int num_threads);
