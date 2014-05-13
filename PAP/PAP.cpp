@@ -301,7 +301,7 @@ int main(int argc, char** argv){
 	////////launch Dijkstra
 	/*for (int i = 0; i < NUMBERofVERTICES/8; i++)
 	{*/
-	dijkstra_GPU<<<8,NUMBERofVERTICES/8>>>(H_G,0, NUMBERofVERTICES);
+	dijkstra_GPU<<<1+NUMBERofVERTICES/256,256>>>(H_G,0, NUMBERofVERTICES);
 	
 	/*}*/
 	
