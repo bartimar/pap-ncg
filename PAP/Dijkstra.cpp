@@ -1,11 +1,11 @@
 #include "PAP.h"
 
-__global__  void dijkstra_GPU(int* vertices, int tid, int NUMBERofVERTICES, int* minimumDistance) {
+__global__  void dijkstra_GPU(int* vertices, int tid, int NUMBERofVERTICES) {
 
-	tid= threadIdx.x;
+	tid=blockIdx.x * blockDim.x + threadIdx.x;
 	
-	printf("tid is %d\n",tid);
-	dijkstraDistance_GPU(vertices,tid,NUMBERofVERTICES,&minimumDistance[ threadIdx.x*NUMBERofVERTICES]);	
+	//printf("tid is %d\n",tid);
+	dijkstraDistance_GPU(vertices,tid,NUMBERofVERTICES);	
 
 }
 
@@ -38,13 +38,13 @@ __device__ void findNearest_GPU(int* minimumDistance, bool *connected, int& dist
 
 
 
-__device__  int *dijkstraDistance_GPU(int* vertices,int shuf, int NUMBERofVERTICES,int* minimumDistance){
+__device__  int *dijkstraDistance_GPU(int* vertices,int shuf, int NUMBERofVERTICES){
 	
 	int  distance, index;
 	//printf("Shuf is %d\n",shuf);
 	// start out with only node shuf connected to the tree
 	bool * connected = (bool*) malloc(NUMBERofVERTICES * sizeof(bool));
-	//int * minimumDistance = (int*) malloc(NUMBERofVERTICES * sizeof(int));
+	int * minimumDistance = (int*) malloc(NUMBERofVERTICES * sizeof(int));
 	
 	for(int i=0; i<NUMBERofVERTICES; i++)
 			connected[i] = false;
@@ -59,10 +59,10 @@ __device__  int *dijkstraDistance_GPU(int* vertices,int shuf, int NUMBERofVERTIC
 //	}
 //	printf("\n");
 //	}
-//
-	/*for(int i=0; i<NUMBERofVERTICES; i++)
+
+	for(int i=0; i<NUMBERofVERTICES; i++)
 		minimumDistance[i] = vertices[shuf*NUMBERofVERTICES+i];
-*/
+
 	for(int step=1; step<NUMBERofVERTICES; step++){
 		
 		findNearest_GPU(minimumDistance, connected, distance, index,shuf, NUMBERofVERTICES);

@@ -25,10 +25,10 @@ static void HandleError( cudaError_t err, const char *file, int line ) {
 
 #define inf INT_MAX
 
-__device__ int *dijkstraDistance_GPU (int* vertices, int shuf, int NUMBERofVERTICES,int*);
+__device__ int *dijkstraDistance_GPU (int* vertices, int shuf, int NUMBERofVERTICES);
 __device__ void findNearest_GPU (int* minimumDistance, bool* connected, int& d, int& v,int, int NUMBERofVERTICES);
 __device__ void updateMinimumDistance_GPU (int mv, bool* connected, int** vertices, int* minimumDistance, int NUMBERofVERTICES);
-__global__ void dijkstra_GPU(int* vertices, int blockId, int NUMBERofVERTICES,int*);
+__global__ void dijkstra_GPU(int* vertices, int blockId, int NUMBERofVERTICES);
 
 int *dijkstraDistance (int** vertices, int shuf,int NUMBERofVERTICES);
 void findNearest (int* minimumDistance, bool* connected, int& d, int& v,int,int NUMBERofVERTICES);
